@@ -1,0 +1,226 @@
+import type { SQLiteDatabase } from 'expo-sqlite';
+import { getDatabase } from '../client';
+import type { PanchangamRecord } from '@/types';
+import { computeInauspiciousTimings, computeNallaNeramApprox } from '@/services/panchangamService';
+import { approxSunriseSunset } from '@/data/seedData';
+import { convertToTamil } from '@/services/tamilCalendarService';
+import { dateKeyToDate, daysInMonth, toDateKey, addDays } from '@/utils/dates';
+
+interface PanchangRow {
+  date_key: string;
+  tithi: string | null;
+  nakshatra: string | null;
+  yoga: string | null;
+  karana: string | null;
+  paksha: string | null;
+  sunrise: string | null;
+  sunset: string | null;
+  moonrise: string | null;
+  moonset: string | null;
+  rahu_kalam: string | null;
+  yamagandam: string | null;
+  kuligai: string | null;
+  nalla_neram: string | null;
+  verified: number;
+  source: string | null;
+}
+
+function rowToRecord(row: PanchangRow): PanchangamRecord {
+  return {
+    dateKey: row.date_key,
+    tithi: row.tithi,
+    nakshatra: row.nakshatra,
+    yoga: row.yoga,
+    karana: row.karana,
+    paksha: row.paksha,
+    sunrise: row.sunrise,
+    sunset: row.sunset,
+    moonrise: row.moonrise,
+    moonset: row.moonset,
+    rahuKalam: row.rahu_kalam,
+    yamagandam: row.yamagandam,
+    kuligai: row.kuligai,
+    nallaNeram: row.nalla_neram,
+  };
+}
+
+/**
+ * Loads panchangam for a local date. If no dataset row exists, computes
+ * classical timings from approximate sun times and flags them as
+ * non-verified via `verified: false`. Never fabricates tithi/nakshatra.
+ */
+export async function getPanchangamForDate(
+  dateKey: string
+): Promise<{ record: PanchangamRecord; verified: boolean; source: string | null }> {
+  const db = await getDatabase();
+  const row = await db.getFirstAsync<PanchangRow>(
+    `SELECT * FROM panchangam_records WHERE date_key = ?`,
+    dateKey
+  );
+  if (row) {
+    return { record: rowToRecord(row), verified: row.verified === 1, source: row.source };
+  }
+
+  // Fallback: derive from approximations (marked unverified).
+  const date = dateKeyToDate(dateKey);
+  const sun = approxSunriseSunset(date.getMonth() + 1);
+  const inauspicious = computeInauspiciousTimings(
+    date.getDay(),
+    sun ?? { sunrise: null, sunset: null }
+  );
+  const record: PanchangamRecord = {
+    dateKey,
+    tithi: null,
+    nakshatra: null,
+    yoga: null,
+    karana: null,
+    paksha: null,
+    sunrise: sun?.sunrise ?? null,
+    sunset: sun?.sunset ?? null,
+    moonrise: null,
+    moonset: null,
+    rahuKalam: inauspicious.rahuKalam,
+    yamagandam: inauspicious.yamagandam,
+    kuligai: inauspicious.kuligai,
+    nallaNeram: computeNallaNeramApprox(sun ?? { sunrise: null, sunset: null }),
+  };
+  return { record, verified: false, source: null };
+}
+
+/** Bulk write used by importer/tests. */
+export async function upsertPanchangam(
+  db: SQLiteDatabase,
+  records: PanchangamRecord[]
+): Promise<void> {
+  for (const r of records) {
+    await db.runAsync(
+      `INSERT OR REPLACE INTO panchangam_records
+       (date_key, tithi, nakshatra, yoga, karana, paksha, sunrise, sunset,
+        moonrise, moonset, rahu_kalam, yamagandam, kuligai, nalla_neram,
+        verified, source)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'bundled dataset')`,
+      r.dateKey,
+      r.tithi,
+      r.nakshatra,
+      r.yoga,
+      r.karana,
+      r.paksha,
+      r.sunrise,
+      r.sunset,
+      r.moonrise,
+      r.moonset,
+      r.rahuKalam,
+      r.yamagandam,
+      r.kuligai,
+      r.nallaNeram
+    );
+  }
+}
+
+/** Tamil date mapping read/write (engine-derived, stored for consistency). */
+export async function getTamilDate(
+  dateKey: string
+): Promise<{
+  day: number | null;
+  month: number | null;
+  yearIndex: number | null;
+  paksha: string | null;
+} | null> {
+  const db = await getDatabase();
+  const row = await db.getFirstAsync<{
+    tamil_day: number | null;
+    tamil_month: number | null;
+    tamil_year_index: number | null;
+    paksha: string | null;
+  }>(`SELECT tamil_day, tamil_month, tamil_year_index, paksha FROM tamil_dates WHERE date_key = ?`, dateKey);
+  if (row) {
+    return {
+      day: row.tamil_day,
+      month: row.tamil_month,
+      yearIndex: row.tamil_year_index,
+      paksha: row.paksha,
+    };
+  }
+  const conv = convertToTamil(dateKeyToDate(dateKey));
+  if (conv.day === null) return null;
+  await db.runAsync(
+    `INSERT OR REPLACE INTO tamil_dates (date_key, tamil_day, tamil_month, tamil_year_index, paksha)
+     VALUES (?, ?, ?, ?, ?)`,
+    dateKey,
+    conv.day,
+    conv.month,
+    conv.yearIndex,
+    conv.paksha
+  );
+  return {
+    day: conv.day,
+    month: conv.month,
+    yearIndex: conv.yearIndex,
+    paksha: conv.paksha,
+  };
+}
+
+export interface TamilDayFor {
+  /** Tamil day-of-month, null when unknown. */
+  (key: string): number | null;
+}
+
+/**
+ * Batch loader for a whole month: returns a dateKey -> Tamil day map for all
+ * days of the given Gregorian month. DB rows first; engine fallback fills
+ * gaps and persists them so later reads hit the DB.
+ */
+export async function getTamilDaysForMonth(
+  year: number,
+  month: number
+): Promise<Map<string, { day: number; month: number }>> {
+  const db = await getDatabase();
+  const prefix = `${year}-${String(month).padStart(2, '0')}-%`;
+  const rows = await db.getAllAsync<{
+    date_key: string;
+    tamil_day: number | null;
+    tamil_month: number | null;
+  }>(
+    `SELECT date_key, tamil_day, tamil_month FROM tamil_dates WHERE date_key LIKE ?`,
+    prefix
+  );
+  const map = new Map<string, { day: number; month: number }>();
+  for (const r of rows) {
+    if (r.tamil_day !== null && r.tamil_day !== undefined) {
+      map.set(r.date_key, { day: Number(r.tamil_day), month: r.tamil_month ?? 0 });
+    }
+  }
+
+  const total = daysInMonth(year, month);
+  const firstKey = toDateKey(year, month, 1);
+  const lastKey = toDateKey(year, month, total);
+
+  // Boundary days of adjacent months also appear in the grid; fill ±6 days past
+  // the month edges so leading/trailing cells carry Tamil dates too.
+  const boundaryBefore = addDays(firstKey, -6);
+  const boundaryAfter = addDays(lastKey, 6);
+  const keysToEnsure: string[] = [];
+  let k = boundaryBefore;
+  while (k <= boundaryAfter) {
+    if (!map.has(k)) keysToEnsure.push(k);
+    if (k === boundaryAfter) break;
+    k = addDays(k, 1);
+  }
+
+  for (const key of keysToEnsure) {
+    const conv = convertToTamil(dateKeyToDate(key));
+    if (conv.day !== null) {
+      map.set(key, { day: conv.day, month: conv.month ?? 0 });
+      await db.runAsync(
+        `INSERT OR REPLACE INTO tamil_dates (date_key, tamil_day, tamil_month, tamil_year_index, paksha)
+         VALUES (?, ?, ?, ?, ?)`,
+        key,
+        conv.day,
+        conv.month,
+        conv.yearIndex,
+        conv.paksha
+      );
+    }
+  }
+  return map;
+}

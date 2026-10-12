@@ -1,0 +1,105 @@
+/**
+ * Local notification service (expo-notifications). Works fully offline.
+ * Duplicate prevention: callers always pass the definition's stored
+ * notification id so cancel-then-schedule is idempotent.
+ */
+import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
+import type { ReminderDefinition } from '@/types';
+import { parseDateKey } from '@/utils/dates';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
+
+/** Android channel (idempotent). */
+export async function ensureAndroidChannel(): Promise<void> {
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('reminders', {
+      name: 'நினைவூட்டல்கள் / Reminders',
+      importance: Notifications.AndroidImportance.HIGH,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#762536',
+    });
+  }
+}
+
+export async function getPermissionStatus(): Promise<
+  'granted' | 'denied' | 'undetermined'
+> {
+  const settings = await Notifications.getPermissionsAsync();
+  if (settings.granted) return 'granted';
+  if (!settings.canAskAgain) return 'denied';
+  return 'undetermined';
+}
+
+export async function requestPermission(): Promise<boolean> {
+  const status = await getPermissionStatus();
+  if (status === 'granted') return true;
+  const req = await Notifications.requestPermissionsAsync();
+  return req.granted;
+}
+
+/** Local 'HH:mm' + date -> trigger fire date (local seconds). null on bad input. */
+export function triggerDateFor(
+  dateKey: string,
+  time: string,
+  repeatYearly: boolean
+): Notifications.DateTriggerInput | Notifications.CalendarTriggerInput | null {
+  const { year, month, day } = parseDateKey(dateKey);
+  const [hStr, mStr] = time.split(':');
+  const hour = Number(hStr);
+  const minute = Number(mStr);
+  if (Number.isNaN(hour) || Number.isNaN(minute)) return null;
+  if (repeatYearly) {
+    return {
+      type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
+      channelId: 'reminders',
+      repeats: true,
+      hour,
+      minute,
+      // month is 1-based in CalendarTriggerInput
+      month,
+      day,
+    };
+  }
+  const fire = new Date(year, month - 1, day, hour, minute, 0, 0);
+  if (fire.getTime() <= Date.now()) return null; // past reminders don't schedule
+  return {
+    type: Notifications.SchedulableTriggerInputTypes.DATE,
+    channelId: 'reminders',
+    date: fire,
+  };
+}
+
+/** Schedule local reminder and return notification id, or null if impossible. */
+export async function scheduleReminder(definition: ReminderDefinition): Promise<string | null> {
+  await ensureAndroidChannel();
+  const trigger = triggerDateFor(definition.dateKey, definition.time, definition.repeat === 'yearly');
+  if (!trigger) return null;
+  const request: Notifications.NotificationRequestInput = {
+    identifier: definition.id, // stable id => prevents duplicates on re-add
+    content: {
+      title: definition.title,
+      body: definition.body ?? '',
+      sound: 'default',
+    },
+    trigger,
+  };
+  const id = await Notifications.scheduleNotificationAsync(request);
+  return id ?? null;
+}
+
+export async function cancelScheduledNotification(notificationId: string): Promise<void> {
+  await Notifications.cancelScheduledNotificationAsync(notificationId);
+}
+
+export async function listScheduledIds(): Promise<string[]> {
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  return scheduled.map((n) => n.identifier);
+}

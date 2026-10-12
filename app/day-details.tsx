@@ -1,0 +1,375 @@
+import React, { useState, useCallback, useMemo } from 'react';
+import { ScrollView, View, Pressable, StyleSheet, TextInput, Share } from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView, Card } from '@/components/ThemedView';
+import { SectionHeader } from '@/components/SectionHeader';
+import { TimeRow } from '@/components/TimeRow';
+import { FestivalRow } from '@/components/FestivalRow';
+import { LoadingView } from '@/components/LoadingView';
+import { EmptyState } from '@/components/EmptyState';
+import { useThemeColors } from '@/hooks/useThemeColors';
+import { useT } from '@/localization';
+import { useSettingsStore } from '@/store/settingsStore';
+import { useDayDetails } from '@/features/daydetails/useDayDetails';
+import { saveNote as saveNoteToDb } from '@/database/repositories/userDataRepo';
+import { toggleBookmark, isBookmarked } from '@/database/repositories/userDataRepo';
+import { useRemindersStore } from '@/store/remindersStore';
+import { getEventsForDate, deleteEvent } from '@/database/repositories/eventsRepo';
+import type { UserEvent } from '@/types';
+import { DEFAULT_REMINDER_HHMM } from '@/data/constants';
+import { spacing } from '@/theme/spacing';
+import { formatTimeWithMeridiem } from '@/utils/numerals';
+
+export default function DayDetailsScreen() {
+  const router = useRouter();
+  const { date } = useLocalSearchParams<{ date: string }>();
+  const dateKey = typeof date === 'string' ? date : '';
+  const t = useT();
+  const { colors } = useThemeColors();
+  const language = useSettingsStore((s) => s.language);
+  const { data, loading, previousKey, nextKey } = useDayDetails(dateKey, language);
+
+  const [noteText, setNoteText] = useState<string>('');
+  const [noteLoadedFor, setNoteLoadedFor] = useState<string>('');
+  const [bookmarked, setBookmarked] = useState<boolean>(false);
+
+  React.useEffect(() => {
+    if (data && noteLoadedFor !== dateKey) {
+      setNoteText(data.note ?? '');
+      setNoteLoadedFor(dateKey);
+      setBookmarked(data.bookmarked);
+    }
+  }, [data, dateKey, noteLoadedFor]);
+
+  const reminders = useRemindersStore((s) => s.remindersForDate(dateKey));
+  const [dayEvents, setDayEvents] = useState<UserEvent[]>([]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const evs = await getEventsForDate(dateKey);
+      if (!cancelled) setDayEvents(evs);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [dateKey]);
+
+  const onDeleteEvent = useCallback(async (id: number) => {
+    const ev = dayEvents.find((e) => e.id === id);
+    if (ev?.notificationId) await cancelScheduledNotificationWrapper(ev.notificationId);
+    await deleteEvent(id);
+    setDayEvents((prev) => prev.filter((e) => e.id !== id));
+  }, [dayEvents]);
+
+  async function cancelScheduledNotificationWrapper(nid: string) {
+    const { cancelScheduledNotification } = await import('@/services/notificationService');
+    await cancelScheduledNotification(nid);
+  }
+
+  const onShare = useCallback(() => {
+    if (!data) return;
+    const lines = [
+      `${data.weekdayLabel} — ${data.gregorianLabel}`,
+      data.tamilMonthLabel ? `Tamil: ${data.tamilMonthLabel} ${data.tamilDay ?? ''} ${data.tamilYearLabel ?? ''}` : null,
+      `Rahu Kalam: ${data.panchangam.record.rahuKalam ?? '—'}`,
+      `Nalla Neram: ${data.panchangam.record.nallaNeram ?? '—'}`,
+      ...data.festivals.map((f) => `• ${language === 'ta' ? f.nameTa : f.nameEn}`),
+    ].filter(Boolean);
+    void Share.share({ message: lines.join('\n') });
+  }, [data, language]);
+
+  const onToggleBookmark = useCallback(async () => {
+    const next = !bookmarked;
+    setBookmarked(next);
+    await toggleBookmark(dateKey, next);
+  }, [bookmarked, dateKey]);
+
+  const onSaveNote = useCallback(async () => {
+    await saveNoteToDb(dateKey, noteText.trim());
+  }, [dateKey, noteText]);
+
+  const onAddReminder = useCallback(async () => {
+    await useRemindersStore.getState().addReminder({
+      dateKey,
+      time: DEFAULT_REMINDER_HHMM,
+      title: t('addReminder'),
+      body: data ? `${data.weekdayLabel} ${data.gregorianLabel}` : dateKey,
+      repeat: 'none',
+    });
+  }, [dateKey, data, t]);
+
+  if (loading) return <LoadingView label={t('loading')} />;
+  if (!data) {
+    return (
+      <EmptyState
+        icon="calendar-outline"
+        title={t('dataUnavailableTitle')}
+        message={t('dataUnavailableMessage')}
+      />
+    );
+  }
+
+  const verified = data.panchangam.verified;
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
+      <View style={styles.topBar}>
+        <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back" hitSlop={8}>
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
+        </Pressable>
+        <View style={styles.topBarActions}>
+          <Pressable onPress={onShare} accessibilityRole="button" accessibilityLabel={t('shareDetails')} hitSlop={8}>
+            <Ionicons name="share-outline" size={22} color={colors.text} />
+          </Pressable>
+          <Pressable onPress={onToggleBookmark} accessibilityRole="button" accessibilityLabel={bookmarked ? t('bookmarked') : t('bookmark')} hitSlop={8}>
+            <Ionicons name={bookmarked ? 'bookmark' : 'bookmark-outline'} size={22} color={bookmarked ? colors.primary : colors.text} />
+          </Pressable>
+        </View>
+      </View>
+
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxxl }}>
+        {/* Date hero */}
+        <Card style={{ padding: spacing.lg, marginBottom: spacing.xl }}>
+          <ThemedText variant="small" color="secondary">
+            {dateKey}
+          </ThemedText>
+          <ThemedText variant="h2" weight="bold" style={{ marginTop: 4 }}>
+            {data.weekdayLabel}
+          </ThemedText>
+          <ThemedText variant="body" style={{ marginTop: 6 }}>
+            {data.gregorianLabel}
+          </ThemedText>
+          <View style={styles.metaRow}>
+            <ThemedText variant="body" color="secondary">
+              {t('tamilDate')}:
+            </ThemedText>
+            <ThemedText variant="body" color="primary" weight="medium">
+              {data.tamilDay !== null && data.tamilMonthLabel
+                ? `${data.tamilMonthLabel} ${data.tamilDay}${data.tamilYearLabel ? `, ${data.tamilYearLabel}` : ''}`
+                : `${t('dataUnavailableTitle')}`}
+            </ThemedText>
+          </View>
+          {data.pakshaLabel ? (
+            <View style={styles.metaRow}>
+              <ThemedText variant="body" color="secondary">
+                {t('paksha')}:
+              </ThemedText>
+              <ThemedText variant="body">{data.pakshaLabel}</ThemedText>
+            </View>
+          ) : null}
+        </Card>
+
+        {/* Panchangam */}
+        <SectionHeader title={t('panchangamSummary')} />
+        <Card style={{ padding: spacing.lg, marginBottom: spacing.xl }}>
+          <TimeRow label={t('tithi')} value={data.panchangam.record.tithi} />
+          <TimeRow label={t('nakshatra')} value={data.panchangam.record.nakshatra} />
+          <TimeRow label={t('yoga')} value={data.panchangam.record.yoga} />
+          <TimeRow label={t('karana')} value={data.panchangam.record.karana} />
+          <TimeRow label={t('rahuKalam')} value={data.panchangam.record.rahuKalam} />
+          <TimeRow label={t('yamagandam')} value={data.panchangam.record.yamagandam} />
+          <TimeRow label={t('kuligai')} value={data.panchangam.record.kuligai} />
+          <TimeRow label={t('nallaNeram')} value={data.panchangam.record.nallaNeram} approximate={!verified} />
+          <TimeRow label={t('sunrise')} value={data.panchangam.record.sunrise} approximate={!verified} />
+          <TimeRow label={t('sunset')} value={data.panchangam.record.sunset} approximate={!verified} />
+          <TimeRow label={t('moonrise')} value={data.panchangam.record.moonrise} />
+          <TimeRow label={t('moonset')} value={data.panchangam.record.moonset} />
+        </Card>
+
+        {/* Festivals & observances */}
+        <SectionHeader title={t('festivalsObservances')} />
+        <View style={{ marginBottom: spacing.xl }}>
+          {data.festivals.map((f) => (
+            <FestivalRow
+              key={f.id}
+              title={language === 'ta' ? f.nameTa : f.nameEn}
+              subtitle={f.isHoliday ? t('holiday') : null}
+              dateLabel={dateKey}
+              festivalDotColor
+            />
+          ))}
+          {data.observances.map((o) => (
+            <FestivalRow
+              key={o.kind}
+              title={language === 'ta' ? o.nameTa : o.nameEn}
+              dateLabel={dateKey}
+            />
+          ))}
+          {data.festivals.length === 0 && data.observances.length === 0 ? (
+            <ThemedText variant="small" color="secondary">
+              {t('festivalUnavailable')}
+            </ThemedText>
+          ) : null}
+        </View>
+
+        {/* Note */}
+        <SectionHeader title={t('note')} />
+        <Card style={{ padding: spacing.md, marginBottom: spacing.lg }}>
+          <TextInput
+            value={noteText}
+            onChangeText={setNoteText}
+            placeholder={t('notePlaceholder')}
+            placeholderTextColor={colors.textSecondary}
+            multiline
+            accessibilityLabel={t('addNote')}
+            style={[styles.noteInput, { color: colors.text }]}
+          />
+          <View style={styles.noteActions}>
+            {data.note ? (
+              <Pressable onPress={() => { void saveNoteToDb(dateKey, ''); setNoteText(''); }} accessibilityRole="button" accessibilityLabel={t('deleteNote')}>
+                <ThemedText variant="small" color="error">
+                  {t('deleteNote')}
+                </ThemedText>
+              </Pressable>
+            ) : null}
+            <Pressable onPress={onSaveNote} accessibilityRole="button" accessibilityLabel={t('saveNote')} style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}>
+              <ThemedText variant="small" color="primary" weight="medium">
+                {t('saveNote')}
+              </ThemedText>
+            </Pressable>
+          </View>
+        </Card>
+
+        {/* User events */}
+        <SectionHeader
+          title={t('events')}
+          actionLabel={t('addEvent')}
+          onAction={() => router.push({ pathname: '/add-event', params: { date: dateKey } })}
+        />
+        <View style={{ marginBottom: spacing.xl }}>
+          {dayEvents.map((ev) => (
+            <View key={ev.id} style={[styles.reminderRow]}>
+              <Ionicons
+                name={ev.kind === 'birthday' ? 'gift-outline' : ev.kind === 'anniversary' ? 'heart-outline' : 'star-outline'}
+                size={18}
+                color={colors.success}
+              />
+              <View style={{ flex: 1, marginLeft: 10 }}>
+                <ThemedText variant="body">{ev.title}</ThemedText>
+                {ev.repeatYearly ? (
+                  <ThemedText variant="caption" color="secondary">
+                    {t('repeatYearly')}
+                  </ThemedText>
+                ) : null}
+              </View>
+              <Pressable
+                onPress={() => void onDeleteEvent(ev.id)}
+                accessibilityRole="button"
+                accessibilityLabel={t('deleteEventShort')}
+              >
+                <Ionicons name="trash-outline" size={18} color={colors.error} />
+              </Pressable>
+            </View>
+          ))}
+          {dayEvents.length === 0 ? (
+            <ThemedText variant="small" color="secondary">
+              {t('noEvents')}
+            </ThemedText>
+          ) : null}
+        </View>
+
+        {/* Reminders */}
+        <SectionHeader title={t('reminders')} actionLabel={t('addReminder')} onAction={onAddReminder} />
+        <View style={{ marginBottom: spacing.xl }}>
+          {reminders.map((r) => (
+            <View key={r.id} style={styles.reminderRow}>
+              <Ionicons name="notifications-outline" size={18} color={colors.primary} />
+              <ThemedText variant="body" style={{ flex: 1, marginLeft: 10 }}>
+                {formatTimeWithMeridiem(r.time, language)} · {r.title}
+              </ThemedText>
+              <Pressable
+                onPress={() => useRemindersStore.getState().deleteReminder(r.id)}
+                accessibilityRole="button"
+                accessibilityLabel={t('deleteReminder')}
+              >
+                <Ionicons name="trash-outline" size={18} color={colors.error} />
+              </Pressable>
+            </View>
+          ))}
+          {reminders.length === 0 ? (
+            <ThemedText variant="small" color="secondary">
+              {t('noReminders')}
+            </ThemedText>
+          ) : null}
+        </View>
+
+        {/* Prev / next day */}
+        <View style={styles.dayNav}>
+          <Pressable
+            onPress={() => router.setParams({ date: previousKey })}
+            accessibilityRole="button"
+            accessibilityLabel={t('previousDay')}
+            style={[styles.dayNavBtn, { minHeight: 44, minWidth: 44, justifyContent: 'center' }]}
+          >
+            <Ionicons name="chevron-back" size={20} color={colors.primary} />
+            <ThemedText variant="small" color="primary">
+              {t('previousDay')}
+            </ThemedText>
+          </Pressable>
+          <Pressable
+            onPress={() => router.setParams({ date: nextKey })}
+            accessibilityRole="button"
+            accessibilityLabel={t('nextDay')}
+            style={[styles.dayNavBtn, { minHeight: 44, minWidth: 44, justifyContent: 'center' }]}
+          >
+            <ThemedText variant="small" color="primary">
+              {t('nextDay')}
+            </ThemedText>
+            <Ionicons name="chevron-forward" size={20} color={colors.primary} />
+          </Pressable>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  topBarActions: {
+    flexDirection: 'row',
+    gap: 20,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  noteInput: {
+    minHeight: 70,
+    textAlignVertical: 'top',
+    fontSize: 15,
+    padding: 4,
+  },
+  noteActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 20,
+    marginTop: 8,
+  },
+  reminderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    minHeight: 44,
+  },
+  dayNav: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dayNavBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+});
