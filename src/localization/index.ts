@@ -55,8 +55,8 @@ export function weekdayName(weekday: number, language: Language, short = false):
 }
 
 /** Tamil month name (1..12) in the requested language. */
-export function tamilMonthName(month: number, language: Language): string {
-  const m = TAMIL_MONTHS[month - 1] ?? TAMIL_MONTHS[0];
+export function tamilMonthName(month: number, language: Language, _short = false): string {
+  const m = TAMIL_MONTHS[Math.min(Math.max(month - 1, 0), 11)] ?? TAMIL_MONTHS[0];
   return language === 'ta' ? m.ta : m.en;
 }
 

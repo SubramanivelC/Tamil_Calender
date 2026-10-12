@@ -13,7 +13,8 @@ import { MonthSelector } from '@/components/calendar/MonthSelector';
 import { LoadingView } from '@/components/LoadingView';
 import { EmptyState } from '@/components/EmptyState';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useT } from '@/localization';
+import { useT, tamilMonthName } from '@/localization';
+import { convertToTamil } from '@/services/tamilCalendarService';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useHomeData, type HomeData } from '@/features/home/useHomeData';
 import { spacing } from '@/theme/spacing';
@@ -74,12 +75,12 @@ export default function HomeScreen() {
           <>
             <SectionHeader title={t('panchangamSummary')} />
             <Card style={{ padding: spacing.lg, marginBottom: spacing.xl }}>
-              <TimeRow label={t('rahuKalam')} value={data.selectedPanchang.rahuKalam} />
-              <TimeRow label={t('yamagandam')} value={data.selectedPanchang.yamagandam} />
-              <TimeRow label={t('kuligai')} value={data.selectedPanchang.kuligai} />
-              <TimeRow label={t('nallaNeram')} value={data.selectedPanchang.nallaNeram} approximate={!data.selectedVerified} />
-              <TimeRow label={t('sunrise')} value={data.selectedPanchang.sunrise} approximate={!data.selectedVerified} />
-              <TimeRow label={t('sunset')} value={data.selectedPanchang.sunset} approximate={!data.selectedVerified} />
+              <TimeRow label={t('rahuKalam')} value={data.selectedPanchang.rahuKalam} language={language} />
+              <TimeRow label={t('yamagandam')} value={data.selectedPanchang.yamagandam} language={language} />
+              <TimeRow label={t('kuligai')} value={data.selectedPanchang.kuligai} language={language} />
+              <TimeRow label={t('nallaNeram')} value={data.selectedPanchang.nallaNeram} approximate={!data.selectedVerified} language={language} />
+              <TimeRow label={t('sunrise')} value={data.selectedPanchang.sunrise} approximate={!data.selectedVerified} language={language} />
+              <TimeRow label={t('sunset')} value={data.selectedPanchang.sunset} approximate={!data.selectedVerified} language={language} />
               <Pressable onPress={() => router.push({ pathname: '/day-details', params: { date: selectedKey } })}>
                 <View style={{ alignSelf: 'flex-end', marginTop: spacing.md }}>
                   <ThemedText variant="small" color="primary" weight="medium">
@@ -163,6 +164,11 @@ function TodayHero({
   t: (k: string) => string;
 }) {
   const parts = parseDateKey(selectedKey);
+  const selectedTamilMonthName = useMemo(() => {
+    // Tamil month name for the selected date's grid (verified engine window).
+    const conv = convertToTamil(new Date(parts.year, parts.month - 1, 1, 12));
+    return conv.month !== null ? tamilMonthName(conv.month, language as 'ta' | 'en') : null;
+  }, [parts.year, parts.month, language]);
   return (
     <Card style={{ padding: spacing.lg, marginBottom: spacing.xl }}>
       <ThemedText variant="small" color="secondary">
@@ -174,9 +180,15 @@ function TodayHero({
       <ThemedText variant="body" color="secondary" style={{ marginTop: 4 }}>
         {data.selectedGregorianLabel}
       </ThemedText>
+      <View style={styles.tamilMonthTag}>
+        <ThemedText variant="small" color="primary" weight="medium" style={{ flexShrink: 1 }}>
+          {t('tamilMonthYear')}: {data.selectedTamilLabel}
+        </ThemedText>
+      </View>
       <View style={{ marginTop: spacing.lg }}>
         <MonthSelector
           monthName={data.selectedMonthName}
+          tamilMonthName={selectedTamilMonthName}
           year={parts.year}
           numerals={String(parts.year)}
           onPrev={() => onNav(shiftMonth(selectedKey, -1))}
@@ -257,6 +269,17 @@ function QuickActions({
 }
 
 const styles = StyleSheet.create({
+  tamilMonthTag: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    marginTop: spacing.sm,
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(118, 37, 54, 0.08)',
+    borderRadius: 999,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+  },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',

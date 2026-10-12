@@ -7,6 +7,8 @@ import { spacing, minTouchTarget } from '@/theme/spacing';
 
 interface MonthSelectorProps {
   monthName: string;
+  /** Optional Tamil month line, shown under the title so both scripts fit. */
+  tamilMonthName?: string | null;
   year: number;
   numerals: string;
   onPrev: () => void;
@@ -20,6 +22,7 @@ interface MonthSelectorProps {
 
 export function MonthSelector({
   monthName,
+  tamilMonthName,
   year,
   numerals,
   onPrev,
@@ -45,12 +48,34 @@ export function MonthSelector({
       <Pressable
         onPress={onTitlePress}
         accessibilityRole="button"
-        accessibilityLabel={`${monthName} ${year}`}
-        style={{ minHeight: minTouchTarget, justifyContent: 'center' }}
+        accessibilityLabel={`${monthName}${tamilMonthName ? ` / ${tamilMonthName}` : ''} ${year}`}
+        style={styles.titleWrap}
       >
-        <ThemedText variant="h3" weight="bold" style={{ textAlign: 'center' }}>
+        {/* Both month names wrap instead of clipping; h3 on narrow screens
+            scales down via adjustsFontSizeToFit (never below ~14pt). */}
+        <ThemedText
+          variant="h3"
+          weight="bold"
+          style={styles.title}
+          adjustsFontSizeToFit
+          minimumFontScale={0.75}
+          numberOfLines={2}
+        >
           {monthName} {numerals}
         </ThemedText>
+        {tamilMonthName ? (
+          <ThemedText
+            variant="small"
+            color="primary"
+            weight="medium"
+            style={styles.subTitle}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+            numberOfLines={1}
+          >
+            {tamilMonthName}
+          </ThemedText>
+        ) : null}
       </Pressable>
       <View style={styles.rightSide}>
         {onToday ? (
@@ -64,7 +89,7 @@ export function MonthSelector({
               { backgroundColor: theme.colors.primaryMuted, opacity: pressed ? 0.8 : 1 },
             ]}
           >
-            <ThemedText variant="small" color="primary" weight="medium">
+            <ThemedText variant="small" color="primary" weight="medium" numberOfLines={1}>
               {todayLabel}
             </ThemedText>
           </Pressable>
@@ -95,6 +120,22 @@ const styles = StyleSheet.create({
     minHeight: minTouchTarget,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  // Title area owns the leftover space and can wrap to 2 lines.
+  titleWrap: {
+    flex: 1,
+    flexShrink: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: minTouchTarget,
+    paddingHorizontal: 2,
+  },
+  title: {
+    textAlign: 'center',
+  },
+  subTitle: {
+    textAlign: 'center',
+    marginTop: 1,
   },
   rightSide: {
     flexDirection: 'row',
