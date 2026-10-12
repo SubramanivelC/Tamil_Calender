@@ -1,5 +1,5 @@
 /**
- * Domain model types for Thirunellai Tamil Calendar.
+ * Domain model types for Tamil Calendar.
  *
  * All "date keys" are local-calendar strings 'YYYY-MM-DD'. We never construct
  * these with UTC methods (which shift dates across time zones); see

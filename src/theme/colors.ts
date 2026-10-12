@@ -1,5 +1,5 @@
 /**
- * Centralized design tokens — Thirunellai Tamil Calendar.
+ * Centralized design tokens — Tamil Calendar.
  *
  * Every color, spacing, radius, and typography choice lives here.
  * UI components must never hardcode colors; they read from `useTheme()`.

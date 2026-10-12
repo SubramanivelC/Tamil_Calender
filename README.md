@@ -1,8 +1,8 @@
-# திருநெல்லை நாட்காட்டி — Thirunellai Tamil Calendar
+# Tamil Calendar — தமிழ் நாட்காட்டி
 
 A premium, fully offline Tamil calendar app for Android and iOS, built with
-React Native (Expo), Expo Router, and expo-sqlite. Original branding-month
-design system: warm ivory backgrounds, maroon accents, restrained gold details.
+React Native (Expo), Expo Router, and expo-sqlite. Design system: warm ivory
+backgrounds, maroon accents, restrained gold details.
 
 ## Features
 
@@ -19,7 +19,7 @@ design system: warm ivory backgrounds, maroon accents, restrained gold details.
 - **Settings** — Tamil/English UI, Tamil or Arabic numerals, light/dark/system
   theme, font scale (accessibility), first day of week, notification preferences.
 - **Day details** — panchangam timings, observances, festivals, notes and
-  datem bookmarks.
+  date bookmarks.
 - **Local reminders** — one-shot and yearly festival reminders via
   expo-notifications; duplicate-scheduling proof via stable ids; persisted in
   SQLite.
@@ -40,7 +40,7 @@ Useful scripts:
 
 ```bash
 npm run typecheck       # tsc --noEmit
-npm test                # jest (85 tests, 14 suites)
+npm test                # jest (88 tests, 14 suites)
 npm run lint            # eslint
 ```
 
@@ -73,7 +73,7 @@ modules being mocked/unavailable — use a development or debug build on device.
 
   ```bash
   cd ios && pod install && cd ..
-  # open ios/Thirunellai.xcworkspace, or:
+  # open ios/TamilCalendar.xcworkspace, or:
   eas build -p ios --profile production
   ```
 
