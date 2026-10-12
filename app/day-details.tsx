@@ -18,15 +18,20 @@ import { saveNote as saveNoteToDb } from '@/database/repositories/userDataRepo';
 import { toggleBookmark, isBookmarked } from '@/database/repositories/userDataRepo';
 import { useRemindersStore } from '@/store/remindersStore';
 import { getEventsForDate, deleteEvent } from '@/database/repositories/eventsRepo';
-import type { UserEvent } from '@/types';
+import type { UserEvent, ReminderDefinition } from '@/types';
 import { DEFAULT_REMINDER_HHMM } from '@/data/constants';
 import { spacing } from '@/theme/spacing';
 import { formatTimeWithMeridiem } from '@/utils/numerals';
+import { localTodayKey, isValidDateKey } from '@/utils/dates';
 
 export default function DayDetailsScreen() {
   const router = useRouter();
   const { date } = useLocalSearchParams<{ date: string }>();
-  const dateKey = typeof date === 'string' ? date : '';
+  // Guard: some entry points (e.g. the Reminders quick action) navigate here
+  // without a `date` param — fall back to today instead of crashing on
+  // `parseDateKey('')`.
+  const passable = typeof date === 'string' && isValidDateKey(date) ? date : null;
+  const dateKey = passable ?? localTodayKey();
   const t = useT();
   const { colors } = useThemeColors();
   const language = useSettingsStore((s) => s.language);
@@ -44,7 +49,18 @@ export default function DayDetailsScreen() {
     }
   }, [data, dateKey, noteLoadedFor]);
 
-  const reminders = useRemindersStore((s) => s.remindersForDate(dateKey));
+  // Select the stable store slices directly — `remindersForDate` builds a new
+  // array per snapshot, and an unstable zustand v5 selector causes an infinite
+  // render loop ("Maximum update depth exceeded" crash). Compute instead.
+  const remindersById = useRemindersStore((s) => s.byId);
+  const remindersOrder = useRemindersStore((s) => s.order);
+  const reminders = useMemo(
+    () =>
+      remindersOrder
+        .map((id) => remindersById[id])
+        .filter((r): r is ReminderDefinition => !!r && r.dateKey === dateKey),
+    [remindersById, remindersOrder, dateKey]
+  );
   const [dayEvents, setDayEvents] = useState<UserEvent[]>([]);
 
   React.useEffect(() => {
