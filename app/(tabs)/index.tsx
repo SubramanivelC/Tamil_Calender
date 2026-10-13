@@ -96,7 +96,8 @@ export default function HomeScreen() {
         <View style={{ paddingHorizontal: spacing.lg }}>
           {data ? (
             <>
-              <SectionHeader title={t('panchangamSummary')} />            <Card style={{ padding: spacing.lg, marginBottom: spacing.xl }}>
+              <SectionHeader title={t('panchangamSummary')} />
+              <Card style={{ padding: spacing.lg, marginBottom: spacing.xl }}>
               {/* Printed-calendar order: Nalla Neram first. */}
               <TimeRow label={t('nallaNeram')} value={data.selectedPanchang.nallaNeram} approximate={!data.selectedVerified} language={language} />
               <TimeRow label={t('sunrise')} value={data.selectedPanchang.sunrise} approximate={!data.selectedVerified} language={language} />
