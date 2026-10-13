@@ -18,6 +18,8 @@ import type { FestivalOccurrence } from '@/types';
 import { tamilMonthsSpanningGregorianMonth } from '@/features/calendar/tamilMonthSpan';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useHomeData, type HomeData } from '@/features/home/useHomeData';
+import { useRasiPalam } from '@/features/rasiPalam/useRasiPalam';
+import { cleanBilingualValue } from '@/utils/bilingual';
 import { spacing } from '@/theme/spacing';
 import { localTodayKey, parseDateKey } from '@/utils/dates';
 
@@ -127,6 +129,8 @@ export default function HomeScreen() {
               </Pressable>
             </Card>
 
+              <RasiPalamCard t={t} language={language} selectedKey={selectedKey} />
+
               <SectionHeader title={t('upcomingFestivals')} actionLabel={t('seeAll')} onAction={() => router.push('/(tabs)/festivals')} />
               <View style={{ marginBottom: spacing.xl }}>
                 {data.upcoming.map((f) => (
@@ -156,6 +160,40 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+/** Today's rasi palam card — only when the user picked a moon sign. */
+function RasiPalamCard({
+  t,
+  language,
+  selectedKey,
+}: {
+  t: (k: string, vars?: Record<string, string | number>) => string;
+  language: string;
+  selectedKey: string;
+}) {
+  const rasiPalam = useRasiPalam(selectedKey);
+  if (!rasiPalam) return null;
+  const p = rasiPalam.palam;
+  return (
+    <Card style={{ padding: spacing.lg, marginBottom: spacing.xl }}>
+      <ThemedText variant="h4" weight="bold">
+        {t('rasiPalam')}
+      </ThemedText>
+      <ThemedText variant="caption" color="secondary" style={{ marginTop: 4 }}>
+        {cleanBilingualValue(rasiPalam.rasiName, language as 'ta' | 'en')}
+      </ThemedText>
+      <ThemedText variant="body" weight="medium" style={{ marginTop: spacing.md }}>
+        {cleanBilingualValue(p.headline, language as 'ta' | 'en')}
+      </ThemedText>
+      <ThemedText variant="caption" color="secondary" style={{ marginTop: 4 }}>
+        {t('moonTransitRow')}: {t('transitFromRasi', { n: p.transit })}
+      </ThemedText>
+      <ThemedText variant="body" style={{ marginTop: spacing.md }}>
+        {cleanBilingualValue(p.palam, language as 'ta' | 'en')}
+      </ThemedText>
+    </Card>
   );
 }
 

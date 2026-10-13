@@ -94,6 +94,20 @@ export const taDict = {
   holiday: 'அரசு விடுமுறை',
   festival: 'பண்டிகை',
 
+  // Rasi palam
+  rasiPalam: 'ராசி பலம்',
+  rasiSelectMode: 'ராசி தேர்வு',
+  byRasiName: 'ராசிப் பெயரால்',
+  selectYourRasi: 'உங்கள் ராசி',
+  byBirthStar: 'நட்சத்திரத்தால்',
+  birthStar: 'பிறந்த நட்சத்திரம்',
+  birthPada: 'நட்சத்திரப் பாதம்',
+  janmaRasi: 'உங்கள் ராசி',
+  dailyPalamNotification: 'தினசரி பலன் அறிவிப்பு',
+  dailyPalamTime: 'அறிவிப்பு நேரம்',
+  moonTransitRow: 'சந்திரகோச்சாரம்',
+  transitFromRasi: 'உங்கள் ராசியிலிருந்து {n}வது',
+
   // Search
   searchPlaceholder: 'பண்டிகை, தேதி, குறிப்பு தேடுங்கள்…',
   clear: 'அழி',

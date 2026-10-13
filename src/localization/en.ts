@@ -92,6 +92,20 @@ export const enDict = {
   holiday: 'Public holiday',
   festival: 'Festival',
 
+  // Rasi palam
+  rasiPalam: 'Rasi Palam',
+  rasiSelectMode: 'Rasi selection',
+  byRasiName: 'By rasi name',
+  selectYourRasi: 'Your rasi',
+  byBirthStar: 'By birth star',
+  birthStar: 'Birth star',
+  birthPada: 'Star pada (quarter)',
+  janmaRasi: 'Your moon sign',
+  dailyPalamNotification: 'Daily palam notification',
+  dailyPalamTime: 'Notification time',
+  moonTransitRow: 'Moon transit',
+  transitFromRasi: '{n}th from your rasi',
+
   // Search
   searchPlaceholder: 'Search festivals, dates, notes…',
   clear: 'Clear',
