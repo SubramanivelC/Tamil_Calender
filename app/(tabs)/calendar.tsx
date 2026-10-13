@@ -18,7 +18,7 @@ import { gregorianMonthName, tamilMonthName, weekdayName } from '@/localization'
 import { getFestivalsForMonth } from '@/database/repositories/festivalRepo';
 import { TAMIL_MONTHS } from '@/data/mappings';
 import { AnnualCalendar } from '@/features/calendar/AnnualCalendar';
-import { convertToTamil } from '@/services/tamilCalendarService';
+import { tamilMonthsSpanningGregorianMonth } from '@/features/calendar/tamilMonthSpan';
 
 export default function CalendarScreen() {
   const router = useRouter();
@@ -40,11 +40,12 @@ export default function CalendarScreen() {
   const [nextYearLabel] = useState('');
 
   const { map: decorations, refetch: refetchDecorations } = useMonthDecorations(year, month);
-  const partsCalendar = useMemo(() => {
-    // Tamil month for the 1st of the displayed Gregorian month.
-    const conv = convertToTamil(new Date(year, month - 1, 1, 12));
-    return { tamilMonth: conv.month ?? 1 };
-  }, [year, month]);
+  // Header shows both Tamil months the Gregorian month spans (e.g. Jan =
+  // Margazhi · Thai), not just the one containing day 1.
+  const tamilMonthLine = useMemo(
+    () => tamilMonthsSpanningGregorianMonth(year, month, language),
+    [year, month, language]
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -101,7 +102,7 @@ export default function CalendarScreen() {
       <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxl }}>
         <MonthSelector
           monthName={gregorianMonthName(month, language)}
-          tamilMonthName={tamilMonthName(partsCalendar.tamilMonth, language, true)}
+          tamilMonthName={tamilMonthLine}
           year={year}
           numerals={String(year)}
           onPrev={() => goMonth(-1)}

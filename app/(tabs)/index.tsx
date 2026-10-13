@@ -13,8 +13,8 @@ import { MonthSelector } from '@/components/calendar/MonthSelector';
 import { LoadingView } from '@/components/LoadingView';
 import { EmptyState } from '@/components/EmptyState';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useT, tamilMonthName } from '@/localization';
-import { convertToTamil } from '@/services/tamilCalendarService';
+import { useT } from '@/localization';
+import { tamilMonthsSpanningGregorianMonth } from '@/features/calendar/tamilMonthSpan';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useHomeData, type HomeData } from '@/features/home/useHomeData';
 import { spacing } from '@/theme/spacing';
@@ -164,11 +164,10 @@ function TodayHero({
   t: (k: string) => string;
 }) {
   const parts = parseDateKey(selectedKey);
-  const selectedTamilMonthName = useMemo(() => {
-    // Tamil month name for the selected date's grid (verified engine window).
-    const conv = convertToTamil(new Date(parts.year, parts.month - 1, 1, 12));
-    return conv.month !== null ? tamilMonthName(conv.month, language as 'ta' | 'en') : null;
-  }, [parts.year, parts.month, language]);
+  const selectedTamilMonthName = useMemo(
+    () => tamilMonthsSpanningGregorianMonth(parts.year, parts.month, language as 'ta' | 'en'),
+    [parts.year, parts.month, language]
+  );
   return (
     <Card style={{ padding: spacing.lg, marginBottom: spacing.xl }}>
       <ThemedText variant="small" color="secondary">
@@ -180,11 +179,6 @@ function TodayHero({
       <ThemedText variant="body" color="secondary" style={{ marginTop: 4 }}>
         {data.selectedGregorianLabel}
       </ThemedText>
-      <View style={styles.tamilMonthTag}>
-        <ThemedText variant="small" color="primary" weight="medium" style={{ flexShrink: 1 }}>
-          {t('tamilMonthYear')}: {data.selectedTamilLabel}
-        </ThemedText>
-      </View>
       <View style={{ marginTop: spacing.lg }}>
         <MonthSelector
           monthName={data.selectedMonthName}
@@ -269,17 +263,6 @@ function QuickActions({
 }
 
 const styles = StyleSheet.create({
-  tamilMonthTag: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    marginTop: spacing.sm,
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(118, 37, 54, 0.08)',
-    borderRadius: 999,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-  },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',

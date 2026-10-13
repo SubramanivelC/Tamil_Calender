@@ -175,6 +175,9 @@ export const taDict = {
   error: 'பிழை',
   dbInitFailed: 'தரவுத்தளம் தொடங்க முடியவில்லை',
   retry: 'மீண்டும் முயற்சி',
+
+  // Navigation (no anglicisms in Tamil mode)
+  back: 'பின்செல்',
 } as const;
 
 export type TaDict = typeof taDict;

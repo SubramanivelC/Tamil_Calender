@@ -136,7 +136,7 @@ export default function DayDetailsScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
       <View style={styles.topBar}>
-        <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back" hitSlop={8}>
+        <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel={t('back')}>
           <Ionicons name="arrow-back" size={22} color={colors.text} />
         </Pressable>
         <View style={styles.topBarActions}>

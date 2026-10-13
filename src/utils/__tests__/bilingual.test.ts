@@ -75,6 +75,46 @@ describe('english dictionary has no Tamil leakage', () => {
 });
 
 /**
+ * "Switching to Tamil still shows English" regression guard: every taDict
+ * key must produce a Tamil-script string (allowing digits, punctuation and
+ * the few keys whose correct Tamil value legitimately contains Latin text,
+ * e.g. a time format or 'HH:mm' placeholder).
+ */
+describe('tamil dictionary has no English leakage', () => {
+  const TAMIL_RE = /[\u0B80-\u0BFF]/;
+  // Keys allowed to be Latin-only because their true value isn't translatable
+  // (format hints, protocols, or proper nouns users recognize in English).
+  const allowlist = new Set<string>([
+    'english', // deliberately shown as 'English' in the language picker
+  ]);
+
+  test('every taDict value contains Tamil script (allowlisted keys excepted)', () => {
+    const offenders = Object.entries(taDict)
+      .filter(([k, v]) => !allowlist.has(k) && !TAMIL_RE.test(v as string))
+      .map(([k, v]) => `${k}="${v}"`);
+    expect(offenders).toEqual([]);
+  });
+
+  test('translate() in Tamil never returns a Latin-only string for any known key', () => {
+    for (const key of Object.keys(taDict)) {
+      if (allowlist.has(key)) continue;
+      const value = translate('ta', key);
+      expect(TAMIL_RE.test(value)).toBe(true);
+    }
+  });
+
+  test('back label localizes in both languages (was hardcoded "Back")', () => {
+    expect(translate('ta', 'back')).toBe('பின்செல்');
+    expect(translate('en', 'back')).toBe('Back');
+  });
+
+  test('eventReminderBody is translatable in both languages (was hardcoded in en)', () => {
+    expect(translate('en', 'eventReminderBody')).toBe('Upcoming event');
+    expect(TAMIL_RE.test(translate('ta', 'eventReminderBody'))).toBe(true);
+  });
+});
+
+/**
  * "Tamil month name is missing" regression: the home hero and calendar
  * header both surface the Tamil month via tamilMonthName(); every month in
  * both languages must resolve to a non-empty string.

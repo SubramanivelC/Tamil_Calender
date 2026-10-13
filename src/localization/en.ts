@@ -173,4 +173,7 @@ export const enDict = {
   error: 'Error',
   dbInitFailed: 'Failed to initialize the database',
   retry: 'Retry',
+
+  // Navigation
+  back: 'Back',
 } as const;
