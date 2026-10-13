@@ -110,3 +110,102 @@ export const TITHI_NAMES = [
   'சதுர்த்தசி / Chaturdasi',
   'அமாவாசை / Amavasai',
 ] as const;
+
+/** Lunar paksha (fortnight) names, bilingual 'தமிழ் / English'. */
+export const PAKSHA_NAMES = {
+  shukla: 'வளர்பிறை / Shukla',
+  krishna: 'தேய்பிறை / Krishna',
+  pournami: 'பௌர்ணமி / Pournami',
+} as const;
+
+/**
+ * 27 nakshatras (moon mansions), bilingual — values must contain Tamil
+ * so the language-purity scan holds when a computed row is rendered.
+ */
+export const NAKSHATRA_NAMES = [
+  'அஸ்வினி / Ashwini',
+  'பரணி / Bharani',
+  'கிருத்திகா / Krittika',
+  'ரோகிணி / Rohini',
+  'மிருகசீர்ஷம் / Mrigashira',
+  'திருவாதிரை / Ardra',
+  'புனர்பூசம் / Punarvasu',
+  'பூசம் / Pushya',
+  'ஆயில்யம் / Ashlesha',
+  'மகம் / Magha',
+  'பூரம் / Purva Phalguni',
+  'உத்தரம் / Uttara Phalguni',
+  'ஹஸ்தம் / Hasta',
+  'சித்திரை / Chitra',
+  'சுவாதி / Swati',
+  'விசாகம் / Vishakha',
+  'அனுஷம் / Anuradha',
+  'கேட்டை / Jyeshta',
+  'மூலம் / Moolam',
+  'பூராடம் / Purvashada',
+  'உத்திராடம் / Uttarashada',
+  'திருவோணம் / Shravana',
+  'அவிட்டம் / Dhanishta',
+  'சதயம் / Shatabhisha',
+  'பூரட்டாதி / Purvabhadra',
+  'உத்திரட்டாதி / Uttarabhadra',
+  'ரேவதி / Revati',
+] as const;
+
+/** 27 yogas (sun+moon longitude sums / 13°20′), bilingual. */
+export const YOGA_NAMES = [
+  'விஷ்கம்பம் / Vishkambha',
+  'ப்ரீதி / Priti',
+  'ஆயுஷ்மான் / Ayushman',
+  'சௌபாக்யம் / Saubhagya',
+  'சோபனம் / Shobhana',
+  'அதிகண்டம் / Atiganda',
+  'சுகர்மா / Sukarma',
+  'த்ருதி / Dhriti',
+  'சூலம் / Shula',
+  'கண்டம் / Ganda',
+  'வ்ருத்தி / Vriddhi',
+  'த்ருவம் / Dhruva',
+  'வ்யாகதம் / Vyaghata',
+  'ஹர்ஷணம் / Harshana',
+  'வஜ்ரம் / Vajra',
+  'சித்தி / Siddhi',
+  'வ்யதிபாதம் / Vyatipata',
+  'வரீயானம் / Variyana',
+  'பரிகம் / Parigha',
+  'சிவம் / Shiva',
+  'சித்தம் / Siddha',
+  'சாத்தியம் / Sadhya',
+  'சுபம் / Shubha',
+  'சுக்லம் / Shukla',
+  'ப்ரஹ்மம் / Brahma',
+  'இந்திரம் / Indra',
+  'வைத்ருதி / Vaidhriti',
+] as const;
+
+/**
+ * 11 karana names. 60 karanas per lunar month: index 0 = Kimstughna,
+ * 1..56 cycle the first seven (Bava..Vishti), the last three are the
+ * remaining fixed ones (Shakuni, Chatushpada, Naga).
+ */
+export const KARANA_NAMES = [
+  'பவம் / Bava',
+  'பலவம் / Balava',
+  'கௌலவம் / Kaulava',
+  'தைதிலம் / Taitila',
+  'கரம் / Gara',
+  'வணிஜம் / Vanija',
+  'விஷ்டி / Vishti',
+  'சகுணி / Shakuni',
+  'சதுஸ்பதம் / Chatushpada',
+  'நாகம் / Naga',
+  'கிம்ஸ்துக்னம் / Kimstughna',
+] as const;
+
+/** Map a lunar-month karana index (0..59) to its KARANA_NAMES slot. */
+export function karanaNameIndex(index: number): number {
+  const i = ((index % 60) + 60) % 60;
+  if (i === 0) return 10; // Kimstughna
+  if (i >= 57) return i - 50; // 57..59 -> Shakuni(7), Chatushpada(8), Naga(9)
+  return (i - 1) % 7; // Bava..Vishti cycle
+}

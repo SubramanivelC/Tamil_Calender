@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import type { DayCell, NumeralStyle, Language } from '@/types';
-import type { PanchangamRecord } from '@/types';
+import type { PanchangamRecord, FestivalOccurrence } from '@/types';
 import { buildMonthGrid } from '@/components/calendar/monthGrid';
 import { useMonthDecorations } from '@/features/calendar/useMonthDecorations';
 import {
@@ -24,6 +24,10 @@ export interface HomeData {
   grid: DayCell[];
   selectedPanchang: PanchangamRecord;
   selectedVerified: boolean;
+  /** Festivals falling on the selected date (for the inline Home details). */
+  dayFestivals: FestivalOccurrence[];
+  /** Observances (amavasai/pournami/pradosham/ekadasi) on the selected date. */
+  dayObservances: { kind: string; nameTa: string; nameEn: string }[];
   upcoming: {
     festivalId: number;
     dateKey: string;
@@ -74,6 +78,11 @@ export function useHomeData(selectedKey: string): {
           getFestivalsForDate(selectedKey),
           getObservancesForDate(selectedKey),
         ]);
+        const dayObservances = observances.map((o) => ({
+          kind: o.kind,
+          nameTa: o.name_ta,
+          nameEn: o.name_en,
+        }));
 
         if (cancelled) return;
 
@@ -88,6 +97,8 @@ export function useHomeData(selectedKey: string): {
           grid,
           selectedPanchang: record,
           selectedVerified: verified,
+          dayFestivals,
+          dayObservances,
           upcoming,
         });
       } finally {

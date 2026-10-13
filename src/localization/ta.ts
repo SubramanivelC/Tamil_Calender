@@ -38,6 +38,7 @@ export const taDict = {
   reminders: 'நினைவூட்டல்கள்',
   seeAll: 'அனைத்தையும் காட்டு',
   viewDetails: 'விவரங்கள்',
+  doubleTapHint: 'முழு விவரங்களுக்கு தேதியை இருமுறை தட்டுங்கள்',
 
   // Calendar
   previousMonth: 'முந்தைய மாதம்',

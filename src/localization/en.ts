@@ -36,6 +36,7 @@ export const enDict = {
   reminders: 'Reminders',
   seeAll: 'See all',
   viewDetails: 'View details',
+  doubleTapHint: 'Double-tap a date to open full details',
 
   // Calendar
   previousMonth: 'Previous month',

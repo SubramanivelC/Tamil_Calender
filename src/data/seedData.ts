@@ -10,72 +10,121 @@
  * the Daivika-period mappings; per-location precise ephemeris is out of scope
  * for the bundled subset and handled by the "unavailable" fallbacks.
  */
+import { julianDay, sunMoonLongitudesAtJd, norm360 } from '@/services/panchangamAstro';
+
 export interface AmavasaiPournamiRecord {
   dateKey: string;
   kind: 'amavasai' | 'pournami';
 }
 
-const AM_POURNA_2026: AmavasaiPournamiRecord[] = [
-  { dateKey: '2026-01-10', kind: 'amavasai' },
-  { dateKey: '2026-01-24', kind: 'pournami' },
-  { dateKey: '2026-02-08', kind: 'amavasai' },
-  { dateKey: '2026-02-23', kind: 'pournami' },
-  { dateKey: '2026-03-09', kind: 'amavasai' },
-  { dateKey: '2026-03-24', kind: 'pournami' },
-  { dateKey: '2026-04-08', kind: 'amavasai' },
-  { dateKey: '2026-04-22', kind: 'pournami' },
-  { dateKey: '2026-05-07', kind: 'amavasai' },
-  { dateKey: '2026-05-22', kind: 'pournami' },
-  { dateKey: '2026-06-05', kind: 'amavasai' },
-  { dateKey: '2026-06-20', kind: 'pournami' },
-  { dateKey: '2026-07-05', kind: 'amavasai' },
-  { dateKey: '2026-07-19', kind: 'pournami' },
-  { dateKey: '2026-08-03', kind: 'amavasai' },
-  { dateKey: '2026-08-18', kind: 'pournami' },
-  { dateKey: '2026-09-01', kind: 'amavasai' },
-  { dateKey: '2026-09-16', kind: 'pournami' },
-  { dateKey: '2026-10-01', kind: 'amavasai' },
-  { dateKey: '2026-10-16', kind: 'pournami' },
-  { dateKey: '2026-10-30', kind: 'amavasai' },
-  { dateKey: '2026-11-14', kind: 'pournami' },
-  { dateKey: '2026-11-29', kind: 'amavasai' },
-  { dateKey: '2026-12-14', kind: 'pournami' },
-  { dateKey: '2026-12-29', kind: 'amavasai' },
-];
+/**
+ * Lunar observance tables are DERIVED from the bundled sidereal ephemeris
+ * (panchangamAstro.ts, Meeus-anchored, see tests) rather than copy-typed —
+ * phase boundaries move from year to year, so copying invites the exact
+ * kind of drift the first dataset revision shipped (dates ~8 days early).
+ * Rules match the printed Tamil daily-calendar convention.
+ */
+const COVERAGE = { start: { y: 2026, m: 1, d: 1 }, end: { y: 2027, m: 12, d: 31 } };
 
-const AM_POURNA_2027: AmavasaiPournamiRecord[] = [
-  { dateKey: '2027-01-13', kind: 'pournami' },
-  { dateKey: '2027-01-28', kind: 'amavasai' },
-  { dateKey: '2027-02-11', kind: 'pournami' },
-  { dateKey: '2027-02-26', kind: 'amavasai' },
-  { dateKey: '2027-03-13', kind: 'pournami' },
-  { dateKey: '2027-03-28', kind: 'amavasai' },
-  { dateKey: '2027-04-11', kind: 'pournami' },
-  { dateKey: '2027-04-26', kind: 'amavasai' },
-  { dateKey: '2027-05-11', kind: 'pournami' },
-  { dateKey: '2027-05-26', kind: 'amavasai' },
-  { dateKey: '2027-06-09', kind: 'pournami' },
-  { dateKey: '2027-06-24', kind: 'amavasai' },
-  { dateKey: '2027-07-09', kind: 'pournami' },
-  { dateKey: '2027-07-24', kind: 'amavasai' },
-  { dateKey: '2027-08-07', kind: 'pournami' },
-  { dateKey: '2027-08-22', kind: 'amavasai' },
-  { dateKey: '2027-09-05', kind: 'pournami' },
-  { dateKey: '2027-09-20', kind: 'amavasai' },
-  { dateKey: '2027-10-05', kind: 'pournami' },
-  { dateKey: '2027-10-20', kind: 'amavasai' },
-  { dateKey: '2027-11-04', kind: 'pournami' },
-  { dateKey: '2027-11-18', kind: 'amavasai' },
-  { dateKey: '2027-12-03', kind: 'pournami' },
-  { dateKey: '2027-12-18', kind: 'amavasai' },
-];
+/** Moon-sun elongation at approx. sunrise (06:00 IST) on a local date. */
+function elongAtSunriseIST(y: number, m: number, d: number): number {
+  const jd = julianDay(y, m, d, (6 * 60 - 330) / 1440);
+  const { moonTropical, sunTropical } = sunMoonLongitudesAtJd(jd);
+  return norm360(moonTropical - sunTropical);
+}
 
-export const AM_POURNA_RECORDS: AmavasaiPournamiRecord[] = [
-  ...AM_POURNA_2026,
-  ...AM_POURNA_2027,
-];
+/** Shortest angular distance a→b across the 0/360 wrap. */
+function angularDist(a: number, b: number): number {
+  return Math.abs(((a - b + 540) % 360) - 180);
+}
 
-export const DATASET_VERSION = '2026.10-subset';
+function eachDay(cb: (y: number, m: number, d: number, e: number) => void): void {
+  const { start, end } = COVERAGE;
+  for (let y = start.y; y <= end.y; y++) {
+    for (let m = 1; m <= 12; m++) {
+      const dim = new Date(y, m, 0).getDate();
+      for (let d = 1; d <= dim; d++) {
+        cb(y, m, d, elongAtSunriseIST(y, m, d));
+      }
+    }
+  }
+}
+
+function toDateKey(y: number, m: number, d: number): string {
+  return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+
+/**
+ * Amavasai/Pournami: the calendar day containing the conjunction (elongation
+ * crossing 0°/180° between two sunrises) — the printed-calendar convention.
+ */
+function generateAmPourna(): AmavasaiPournamiRecord[] {
+  const rows: AmavasaiPournamiRecord[] = [];
+  const dates: { key: string; y: number; m: number; d: number; e: number }[] = [];
+  eachDay((y, m, d, e) => dates.push({ key: toDateKey(y, m, d), y, m, d, e }));
+  for (let i = 0; i < dates.length - 1; i++) {
+    const cur = dates[i];
+    const next = dates[i + 1];
+    if (!cur || !next) continue;
+    const a = cur.e;
+    const b = next.e;
+    // Amavasai: elongation wrapping past 0 (a>180 falls to b<180).
+    if (a > 180 && b < 180) {
+      const offsetH = ((360 - a) / (b + (360 - a))) * 24;
+      rows.push({
+        dateKey: offsetH < 18 ? cur.key : next.key,
+        kind: 'amavasai',
+      });
+    }
+    // Pournami: elongation crossing 180 upward.
+    if (a < 180 && b > 180) {
+      const offsetH = ((180 - a) / (b - a)) * 24;
+      rows.push({
+        dateKey: offsetH < 18 ? cur.key : next.key,
+        kind: 'pournami',
+      });
+    }
+  }
+  return rows;
+}
+
+/**
+ * Tithi-band observances (Ekadasi = tithi 11 ⇒ band centers 126/306;
+ * Pradosham = trayodashi/tithi 13 ⇒ centers 150/330). The band-prevailing
+ * day is the local minimum of angular distance to the center, guaranteeing
+ * exactly one day per fortnight even when a fast moon skips the ±6° band.
+ */
+function generateTithiBandDates(centers: number[]): string[] {
+  const days: { key: string; dist: number }[] = [];
+  const list: { y: number; m: number; d: number; e: number }[] = [];
+  eachDay((y, m, d, e) => list.push({ y, m, d, e }));
+  for (const day of list) {
+    const dist = Math.min(...centers.map((c) => angularDist(day.e, c)));
+    days.push({ key: toDateKey(day.y, day.m, day.d), dist });
+  }
+  const out: string[] = [];
+  for (let i = 1; i < days.length - 1; i++) {
+    const cur = days[i];
+    const prev = days[i - 1];
+    const next = days[i + 1];
+    if (!cur || !prev || !next) continue;
+    if (cur.dist < 8 && cur.dist <= next.dist && cur.dist < prev.dist) {
+      out.push(cur.key);
+    }
+  }
+  return out;
+}
+
+/** Amavasai + Pournami dates for the coverage window (engine-derived). */
+export const AM_POURNA_RECORDS: AmavasaiPournamiRecord[] = generateAmPourna();
+
+/** Pradosham (trayodashi) dates for the coverage window (engine-derived). */
+export const PRADOSHAM_DATES: string[] = generateTithiBandDates([150, 330]);
+
+/** Ekadasi (tithi 11) dates for the coverage window (engine-derived). */
+export const EKADASI_DATES: string[] = generateTithiBandDates([126, 306]);
+
+export const DATASET_VERSION = '2026.10-subset.2';
 export const DATASET_COVERAGE_START = '2026-01-01';
 export const DATASET_COVERAGE_END = '2027-12-31';
 
@@ -125,30 +174,6 @@ export const FESTIVALS_2027: SeedFestival[] = [
 ];
 
 export const SEED_FESTIVALS: SeedFestival[] = [...FESTIVALS_2026, ...FESTIVALS_2027];
-
-/**
- * Pradosham/Ekadasi dates for the coverage window — verified table
- * (("@astronomy/tamilcalendar") bundled dataset doc).
- */
-export const PRADOSHAM_DATES: string[] = [
-  '2026-01-02', '2026-01-17', '2026-01-31',
-  '2026-02-16', '2026-03-01', '2026-03-16', '2026-03-31',
-  '2026-04-14', '2026-04-28', '2026-05-13', '2026-05-28',
-  '2026-06-11', '2026-06-25', '2026-07-10', '2026-07-24',
-  '2026-08-07', '2026-08-22', '2026-09-05', '2026-09-20',
-  '2026-10-04', '2026-10-19', '2026-11-02', '2026-11-17',
-  '2026-12-02', '2026-12-17', '2026-12-31',
-];
-
-export const EKADASI_DATES: string[] = [
-  '2026-01-05', '2026-01-19', '2026-02-03', '2026-02-18',
-  '2026-03-05', '2026-03-19', '2026-04-03', '2026-04-17',
-  '2026-05-02', '2026-05-17', '2026-06-01', '2026-06-16',
-  '2026-06-30', '2026-07-15', '2026-07-29', '2026-08-13',
-  '2026-08-27', '2026-09-11', '2026-09-25', '2026-10-10',
-  '2026-10-24', '2026-11-08', '2026-11-22', '2026-12-07',
-  '2026-12-21',
-];
 
 /**
  * Sunrise/sunset for Chennai (approx. fixed offsets through the year,

@@ -181,19 +181,19 @@ export default function DayDetailsScreen() {
           ) : null}
         </Card>
 
-        {/* Panchangam */}
+        {/* Panchangam — printed-calendar order: Nalla Neram first */}
         <SectionHeader title={t('panchangamSummary')} />
         <Card style={{ padding: spacing.lg, marginBottom: spacing.xl }}>
+          <TimeRow label={t('nallaNeram')} value={data.panchangam.record.nallaNeram} approximate={!verified} language={language} />
+          <TimeRow label={t('sunrise')} value={data.panchangam.record.sunrise} approximate={!verified} language={language} />
+          <TimeRow label={t('sunset')} value={data.panchangam.record.sunset} approximate={!verified} language={language} />
+          <TimeRow label={t('rahuKalam')} value={data.panchangam.record.rahuKalam} language={language} />
+          <TimeRow label={t('yamagandam')} value={data.panchangam.record.yamagandam} language={language} />
+          <TimeRow label={t('kuligai')} value={data.panchangam.record.kuligai} language={language} />
           <TimeRow label={t('tithi')} value={data.panchangam.record.tithi} language={language} />
           <TimeRow label={t('nakshatra')} value={data.panchangam.record.nakshatra} language={language} />
           <TimeRow label={t('yoga')} value={data.panchangam.record.yoga} language={language} />
           <TimeRow label={t('karana')} value={data.panchangam.record.karana} language={language} />
-          <TimeRow label={t('rahuKalam')} value={data.panchangam.record.rahuKalam} language={language} />
-          <TimeRow label={t('yamagandam')} value={data.panchangam.record.yamagandam} language={language} />
-          <TimeRow label={t('kuligai')} value={data.panchangam.record.kuligai} language={language} />
-          <TimeRow label={t('nallaNeram')} value={data.panchangam.record.nallaNeram} approximate={!verified} language={language} />
-          <TimeRow label={t('sunrise')} value={data.panchangam.record.sunrise} approximate={!verified} language={language} />
-          <TimeRow label={t('sunset')} value={data.panchangam.record.sunset} approximate={!verified} language={language} />
           <TimeRow label={t('moonrise')} value={data.panchangam.record.moonrise} language={language} />
           <TimeRow label={t('moonset')} value={data.panchangam.record.moonset} language={language} />
         </Card>

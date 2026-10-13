@@ -113,9 +113,11 @@ describe('user data repositories', () => {
   });
 
   test('observances by date (amavasai/pournami/pradosham/ekadasi)', async () => {
-    const amd = await getObservancesForDate('2026-01-10');
+    // Dates follow the engine-derived lunar tables (dataset 2026.10-subset.2):
+    // conjunction Jan 19, trayodashi Jan 16.
+    const amd = await getObservancesForDate('2026-01-19');
     expect(amd.some((o) => o.kind === 'amavasai')).toBe(true);
-    const pradosham = await getObservancesForDate('2026-01-17');
+    const pradosham = await getObservancesForDate('2026-01-16');
     expect(pradosham.some((o) => o.kind === 'pradosham')).toBe(true);
   });
 

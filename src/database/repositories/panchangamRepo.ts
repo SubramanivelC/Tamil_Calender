@@ -1,7 +1,8 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { getDatabase } from '../client';
 import type { PanchangamRecord } from '@/types';
-import { computeInauspiciousTimings, computeNallaNeramApprox } from '@/services/panchangamService';
+import { computeInauspiciousTimings, computeNallaNeramGowri } from '@/services/panchangamService';
+import { julianDay, lunarFieldsAtJd } from '@/services/panchangamAstro';
 import { approxSunriseSunset } from '@/data/seedData';
 import { convertToTamil } from '@/services/tamilCalendarService';
 import { dateKeyToDate, daysInMonth, toDateKey, addDays } from '@/utils/dates';
@@ -68,13 +69,20 @@ export async function getPanchangamForDate(
     date.getDay(),
     sun ?? { sunrise: null, sunset: null }
   );
+
+  // Tithi/nakshatra/yoga/karana/paksha are evaluated at sunrise, evaluated
+  // in IST (Tamil Nadu convention; sunrise strings are IST HH:mm).
+  const lunar = sun?.sunrise
+    ? lunarFieldsAtSunrise(date.getFullYear(), date.getMonth() + 1, date.getDate(), sun.sunrise)
+    : null;
+
   const record: PanchangamRecord = {
     dateKey,
-    tithi: null,
-    nakshatra: null,
-    yoga: null,
-    karana: null,
-    paksha: null,
+    tithi: lunar?.tithi ?? null,
+    nakshatra: lunar?.nakshatra ?? null,
+    yoga: lunar?.yoga ?? null,
+    karana: lunar?.karana ?? null,
+    paksha: lunar?.paksha ?? null,
     sunrise: sun?.sunrise ?? null,
     sunset: sun?.sunset ?? null,
     moonrise: null,
@@ -82,9 +90,19 @@ export async function getPanchangamForDate(
     rahuKalam: inauspicious.rahuKalam,
     yamagandam: inauspicious.yamagandam,
     kuligai: inauspicious.kuligai,
-    nallaNeram: computeNallaNeramApprox(sun ?? { sunrise: null, sunset: null }),
+    nallaNeram: computeNallaNeramGowri(date.getDay(), sun ?? { sunrise: null, sunset: null }),
   };
   return { record, verified: false, source: null };
+}
+
+/** Julian Day at the given IST sunrise time on the local date. */
+function lunarFieldsAtSunrise(year: number, month: number, day: number, sunriseIST: string) {
+  const [h, m] = sunriseIST.split(':').map(Number);
+  const localMinutes = (h ?? 0) * 60 + (m ?? 0);
+  const utcMinutes = localMinutes - 330; // IST = UTC +5:30
+  const dayFraction = utcMinutes / (24 * 60);
+  const jd = julianDay(year, month, day, dayFraction);
+  return lunarFieldsAtJd(jd);
 }
 
 /** Bulk write used by importer/tests. */
