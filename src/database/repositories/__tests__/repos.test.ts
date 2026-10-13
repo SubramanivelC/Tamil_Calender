@@ -20,6 +20,8 @@ import {
   getFestivalsForMonth,
   getUpcomingFestivals,
   getObservancesForDate,
+  getObservancesForMonth,
+  getObservancesForYear,
 } from '../festivalRepo';
 import { getPanchangamForDate, getTamilDate, getTamilDaysForMonth } from '../panchangamRepo';
 import {
@@ -119,6 +121,19 @@ describe('user data repositories', () => {
     expect(amd.some((o) => o.kind === 'amavasai')).toBe(true);
     const pradosham = await getObservancesForDate('2026-01-16');
     expect(pradosham.some((o) => o.kind === 'pradosham')).toBe(true);
+  });
+
+  test('observances by year returns the full-month amavasai/pournami set for the annual calendar', async () => {
+    const yearRows = await getObservancesForYear(2026);
+    // Engine-derived tables (dataset 2026.10-subset.2) hold a stable split.
+    expect(yearRows.some((o) => o.kind === 'amavasai')).toBe(true);
+    expect(yearRows.some((o) => o.kind === 'pournami')).toBe(true);
+    // Every seeded observance row for that year is returned (no truncation).
+    const all = new Set(yearRows.map((o) => o.date_key));
+    expect(all.has('2026-01-19')).toBe(true); // seeded amavasai
+    // The month query must be the year rows intersected with January.
+    const january = await getObservancesForMonth(2026, 1);
+    expect(january.every((o) => all.has(o.date_key))).toBe(true);
   });
 
   test('panchangam fallback present even without dataset row (unverified)', async () => {

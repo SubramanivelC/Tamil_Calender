@@ -133,3 +133,11 @@ export async function getObservancesForMonth(year: number, month: number): Promi
     prefix
   );
 }
+
+export async function getObservancesForYear(year: number): Promise<ObservanceRow[]> {
+  const db = await getDatabase();
+  return db.getAllAsync<ObservanceRow>(
+    `SELECT date_key, kind, name_ta, name_en FROM observances WHERE date_key LIKE ? ORDER BY date_key`,
+    `${year}-%`
+  );
+}

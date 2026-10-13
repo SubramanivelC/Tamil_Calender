@@ -6,8 +6,8 @@ import { Card } from '@/components/ThemedView';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useT, gregorianMonthName } from '@/localization';
 import { useSettingsStore } from '@/store/settingsStore';
-import { buildMonthGrid } from '@/components/calendar/monthGrid';
-import { getFestivalsForYear } from '@/database/repositories/festivalRepo';
+import { buildMonthGrid, type DayDecoration } from '@/components/calendar/monthGrid';
+import { getFestivalsForYear, getObservancesForYear } from '@/database/repositories/festivalRepo';
 import { spacing } from '@/theme/spacing';
 import { parseDateKey } from '@/utils/dates';
 import type { DayCell } from '@/types';
@@ -40,19 +40,34 @@ export function AnnualCalendar({
   const columns = width >= 720 ? 3 : 2;
 
   const [festivalByMonth, setFestivalByMonth] = useState<Record<number, Set<string>>>({});
+  const [decorations, setDecorations] = useState<Map<string, DayDecoration>>(new Map());
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const map: Record<number, Set<string>> = {};
       // Load festivals for the entire year efficiently.
-      const fests = await getFestivalsForYear(year);
+      const [fests, obsRows] = await Promise.all([
+        getFestivalsForYear(year),
+        getObservancesForYear(year),
+      ]);
+      const map: Record<number, Set<string>> = {};
       for (const f of fests) {
         const { month } = parseDateKey(f.dateKey);
         if (!map[month]) map[month] = new Set();
         map[month].add(f.dateKey);
       }
-      if (!cancelled) setFestivalByMonth(map);
+      // Amavasai / Pournami moon markers per date.
+      const decor = new Map<string, DayDecoration>();
+      for (const o of obsRows) {
+        decor.set(o.date_key, {
+          isAmavasai: o.kind === 'amavasai',
+          isPournami: o.kind === 'pournami',
+        });
+      }
+      if (!cancelled) {
+        setFestivalByMonth(map);
+        setDecorations(decor);
+      }
     })();
     return () => {
       cancelled = true;
@@ -67,9 +82,10 @@ export function AnnualCalendar({
         month: i + 1,
         firstDayOfWeek,
         festivalKeys: festivalByMonth[i + 1],
+        decorations,
       }),
     }));
-  }, [year, firstDayOfWeek, festivalByMonth]);
+  }, [year, firstDayOfWeek, festivalByMonth, decorations]);
 
   const gridFor = (m: number) => grids[m - 1]?.cells ?? [];
 
@@ -91,6 +107,20 @@ export function AnnualCalendar({
             ›
           </ThemedText>
         </Pressable>
+      </View>
+      <View style={styles.legendRow}>
+        <ThemedText variant="caption" color="secondary">
+          {t('amavasai')}
+        </ThemedText>
+        <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: colors.textSecondary }} />
+        <ThemedText variant="caption" color="secondary">
+          {t('pournami')}
+        </ThemedText>
+        <View style={{ width: 5, height: 5, borderRadius: 2.5, borderWidth: 1, borderColor: colors.primary }} />
+        <ThemedText variant="caption" color="secondary">
+          {t('festival')}
+        </ThemedText>
+        <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: colors.festival }} />
       </View>
       <View style={styles.gridWrap}>
         {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
@@ -147,7 +177,15 @@ export function MiniMonth({
               key={cell.key}
               onPress={() => onPress(cell.key)}
               accessibilityRole="button"
-              accessibilityLabel={cell.key}
+              accessibilityLabel={
+                cell.hasFestival
+                  ? `${cell.key}, festival`
+                  : cell.isAmavasai
+                    ? `${cell.key}, amavasai`
+                    : cell.isPournami
+                      ? `${cell.key}, pournami`
+                      : cell.key
+              }
               style={miniStyles.dayCell}
             >
               <ThemedText
@@ -171,6 +209,43 @@ export function MiniMonth({
                     backgroundColor: festival,
                   }}
                 />
+              ) : cell.isAmavasai ? (
+                <View
+                  style={{
+                    width: 5,
+                    height: 4,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 5,
+                      height: 5,
+                      borderRadius: 2.5,
+                      backgroundColor: muted,
+                    }}
+                  />
+                </View>
+              ) : cell.isPournami ? (
+                <View
+                  style={{
+                    width: 5,
+                    height: 4,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 4,
+                      height: 4,
+                      borderRadius: 2,
+                      borderWidth: 1,
+                      borderColor: primary,
+                    }}
+                  />
+                </View>
               ) : (
                 <View style={{ height: 4 }} />
               )}
@@ -193,5 +268,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.md,
+  },
+  legendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: spacing.md,
   },
 });

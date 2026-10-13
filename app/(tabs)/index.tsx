@@ -31,8 +31,6 @@ export default function HomeScreen() {
   const todayKey = useMemo(() => localTodayKey(), []);
   const todayParts = useMemo(() => parseDateKey(todayKey), [todayKey]);
 
-  const scrollRef = useRef<ScrollView>(null);
-  const detailsYRef = useRef(0);
 
   const [selectedKey, setSelectedKey] = useState<string>(todayKey);
   const { data, loading, refetch } = useHomeData(selectedKey);
@@ -55,7 +53,6 @@ export default function HomeScreen() {
       }
       lastTapRef.current = { key, time: now };
       setSelectedKey(key);
-      scrollRef.current?.scrollTo({ y: detailsYRef.current, animated: true });
     },
     [router]
   );
@@ -67,7 +64,6 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
       <ScrollView
-        ref={scrollRef}
         contentContainerStyle={{ paddingBottom: spacing.xxl }}
         showsVerticalScrollIndicator={false}
       >
@@ -96,9 +92,7 @@ export default function HomeScreen() {
 
         {data ? (
           <>
-            <View onLayout={(e) => (detailsYRef.current = e.nativeEvent.layout.y)}>
-              <SectionHeader title={t('panchangamSummary')} />
-            </View>
+            <SectionHeader title={t('panchangamSummary')} />
             <Card style={{ padding: spacing.lg, marginBottom: spacing.xl }}>
               {/* Printed-calendar order: Nalla Neram first. */}
               <TimeRow label={t('nallaNeram')} value={data.selectedPanchang.nallaNeram} approximate={!data.selectedVerified} language={language} />
