@@ -13,7 +13,14 @@ export function SectionHeader({ title, actionLabel, onAction }: SectionHeaderPro
   const theme = useTheme();
   return (
     <View style={styles.row}>
-      <ThemedText variant="h4" weight="bold" style={{ color: theme.colors.text }}>
+      <ThemedText
+        variant="h4"
+        weight="bold"
+        style={[{ color: theme.colors.text }, styles.title]}
+        adjustsFontSizeToFit
+        minimumFontScale={0.8}
+        numberOfLines={2}
+      >
         {title}
       </ThemedText>
       {actionLabel && onAction ? (
@@ -38,5 +45,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
+  },
+  // Titles like "பண்டிகைகள் மற்றும் நோன்புகள்" shrink/wrap instead of pushing
+  // the action link off-screen on narrow devices.
+  title: {
+    flex: 1,
+    flexShrink: 1,
+    marginRight: 8,
   },
 });

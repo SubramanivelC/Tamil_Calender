@@ -59,4 +59,26 @@ describe('buildMonthGrid', () => {
     expect(cells.find((c) => c.key === '2026-04-14')?.tamilDay).toBe(1);
     expect(cells.find((c) => c.key === '2026-04-15')?.tamilDay).toBeNull();
   });
+
+  test('amavasai/pournami decorations propagate to cells', () => {
+    const cells = buildMonthGrid({
+      year: 2026,
+      month: 1,
+      firstDayOfWeek: 0,
+      decorations: new Map([
+        ['2026-01-19', { isAmavasai: true }],
+        ['2026-01-04', { isPournami: true }],
+      ]),
+    });
+    const amavasai = cells.find((c) => c.key === '2026-01-19');
+    expect(amavasai?.isAmavasai).toBe(true);
+    expect(amavasai?.isPournami).toBe(false);
+    const pournami = cells.find((c) => c.key === '2026-01-04');
+    expect(pournami?.isPournami).toBe(true);
+    expect(pournami?.isAmavasai).toBe(false);
+    // A plain day carries no moon flags.
+    const plain = cells.find((c) => c.key === '2026-01-10');
+    expect(plain?.isAmavasai).toBe(false);
+    expect(plain?.isPournami).toBe(false);
+  });
 });

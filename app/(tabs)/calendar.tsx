@@ -18,6 +18,7 @@ import { gregorianMonthName, tamilMonthName, weekdayName } from '@/localization'
 import { getFestivalsForMonth } from '@/database/repositories/festivalRepo';
 import { TAMIL_MONTHS } from '@/data/mappings';
 import { AnnualCalendar } from '@/features/calendar/AnnualCalendar';
+import { tamilMonthsSpanningGregorianMonth } from '@/features/calendar/tamilMonthSpan';
 
 export default function CalendarScreen() {
   const router = useRouter();
@@ -39,6 +40,12 @@ export default function CalendarScreen() {
   const [nextYearLabel] = useState('');
 
   const { map: decorations, refetch: refetchDecorations } = useMonthDecorations(year, month);
+  // Header shows both Tamil months the Gregorian month spans (e.g. Jan =
+  // Margazhi · Thai), not just the one containing day 1.
+  const tamilMonthLine = useMemo(
+    () => tamilMonthsSpanningGregorianMonth(year, month, language),
+    [year, month, language]
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -95,6 +102,7 @@ export default function CalendarScreen() {
       <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxl }}>
         <MonthSelector
           monthName={gregorianMonthName(month, language)}
+          tamilMonthName={tamilMonthLine}
           year={year}
           numerals={String(year)}
           onPrev={() => goMonth(-1)}
@@ -119,6 +127,20 @@ export default function CalendarScreen() {
             onSelectDate={(key) => router.push({ pathname: '/day-details', params: { date: key } })}
           />
         </Card>
+        <View style={styles.legendRow}>
+          <ThemedText variant="caption" color="secondary">
+            {t('amavasai')}
+          </ThemedText>
+          <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: colors.textSecondary }} />
+          <ThemedText variant="caption" color="secondary">
+            {t('pournami')}
+          </ThemedText>
+          <View style={{ width: 5, height: 5, borderRadius: 2.5, borderWidth: 1, borderColor: colors.primary }} />
+          <ThemedText variant="caption" color="secondary">
+            {t('festival')}
+          </ThemedText>
+          <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: colors.festival }} />
+        </View>
         <View style={styles.prevYearRow}>
           <Pressable onPress={() => goYear(-1)} accessibilityRole="button" accessibilityLabel={t('previousYear')} style={styles.yearBtn}>
             <Ionicons name="chevron-back" size={18} color={colors.primary} />
@@ -202,6 +224,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 999,
+  },
+  legendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
+    alignSelf: 'flex-start',
   },
   prevYearRow: {
     flexDirection: 'row',

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import type { DayCell, NumeralStyle, Language } from '@/types';
-import type { PanchangamRecord } from '@/types';
+import type { PanchangamRecord, FestivalOccurrence } from '@/types';
 import { buildMonthGrid } from '@/components/calendar/monthGrid';
 import { useMonthDecorations } from '@/features/calendar/useMonthDecorations';
 import {
@@ -24,6 +24,10 @@ export interface HomeData {
   grid: DayCell[];
   selectedPanchang: PanchangamRecord;
   selectedVerified: boolean;
+  /** Festivals falling on the selected date (for the inline Home details). */
+  dayFestivals: FestivalOccurrence[];
+  /** Observances (amavasai/pournami/pradosham/ekadasi) on the selected date. */
+  dayObservances: { kind: string; nameTa: string; nameEn: string }[];
   upcoming: {
     festivalId: number;
     dateKey: string;
@@ -46,6 +50,12 @@ export function useHomeData(selectedKey: string): {
   const [loading, setLoading] = useState(true);
   const [tick, setTick] = useState(0);
   const refetch = useCallback(() => setTick((t) => t + 1), []);
+  // Subscribe to settings *reactively* — reading getState() inside the effect
+  // froze these labels in whatever language was active at first render, so the
+  // Home hero stayed in Tamil after switching to English. Recompute on change.
+  const language = useSettingsStore((s) => s.language);
+  const numerals = useSettingsStore((s) => s.numerals);
+  const firstDayOfWeek = useSettingsStore((s) => s.firstDayOfWeek);
   const parts0 = parseDateKey(selectedKey);
   const { map: decorations } = useMonthDecorations(parts0.year, parts0.month);
 
@@ -56,13 +66,11 @@ export function useHomeData(selectedKey: string): {
       try {
         const { year, month } = parseDateKey(selectedKey);
         const todayKey = localTodayKey();
-        const language = useSettingsLanguage();
-        const numerals = useSettingsNumerals();
 
         // Build grid flags from DB.
         const festivals = await getFestivalsForMonth(year, month);
         const festivalKeys = new Set(festivals.map((f) => f.dateKey));
-        const grid = buildMonthGrid({ year, month, firstDayOfWeek: useSettingsFirstDay(), festivalKeys, decorations });
+        const grid = buildMonthGrid({ year, month, firstDayOfWeek, festivalKeys, decorations });
 
         const [{ record, verified }, upcoming, dayFestivals, observances] = await Promise.all([
           getPanchangamForDate(selectedKey),
@@ -70,6 +78,11 @@ export function useHomeData(selectedKey: string): {
           getFestivalsForDate(selectedKey),
           getObservancesForDate(selectedKey),
         ]);
+        const dayObservances = observances.map((o) => ({
+          kind: o.kind,
+          nameTa: o.name_ta,
+          nameEn: o.name_en,
+        }));
 
         if (cancelled) return;
 
@@ -84,6 +97,8 @@ export function useHomeData(selectedKey: string): {
           grid,
           selectedPanchang: record,
           selectedVerified: verified,
+          dayFestivals,
+          dayObservances,
           upcoming,
         });
       } finally {
@@ -93,23 +108,13 @@ export function useHomeData(selectedKey: string): {
     return () => {
       cancelled = true;
     };
-  }, [selectedKey, tick, decorations]);
+  }, [selectedKey, tick, decorations, language, numerals, firstDayOfWeek]);
 
   return { data, loading, refetch };
 }
 
 // Lazily imported settings selectors (avoid store import cycle at module top).
 import { useSettingsStore } from '@/store/settingsStore';
-
-function useSettingsLanguage(): Language {
-  return useSettingsStore.getState().language;
-}
-function useSettingsNumerals(): NumeralStyle {
-  return useSettingsStore.getState().numerals;
-}
-function useSettingsFirstDay(): 0 | 1 {
-  return useSettingsStore.getState().firstDayOfWeek;
-}
 
 function formatToday(key: string, language: Language): string {
   const { year, month, day } = parseDateKey(key);

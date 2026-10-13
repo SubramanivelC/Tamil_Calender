@@ -37,6 +37,11 @@ export async function importBundledDataset(db: SQLiteDatabase): Promise<boolean>
 }
 
 async function importTemplates(db: SQLiteDatabase): Promise<void> {
+  // The engine-derived lunar tables replaced copy-typed ones in dataset
+  // 2026.10-subset.2; sweep stale rows so shifted dates can't survive.
+  await db.runAsync(
+    `DELETE FROM observances WHERE kind IN ('amavasai', 'pournami', 'pradosham', 'ekadasi')`
+  );
   // Amavasai/Pournami verified rows -> observances + approximate panchangam
   for (const rec of AM_POURNA_RECORDS) {
     const { year, month } = parse(rec.dateKey);
@@ -56,6 +61,17 @@ async function importTemplates(db: SQLiteDatabase): Promise<void> {
 
 async function importFestivals(db: SQLiteDatabase): Promise<void> {
   for (const f of SEED_FESTIVALS) {
+    // Idempotent re-import: skip when this festival already occurs on this
+    // date (a dataset-version bump re-runs import, and plain INSERT would
+    // duplicate every festival row).
+    const existing = await db.getFirstAsync<{ festival_id: number }>(
+      `SELECT o.festival_id FROM festival_occurrences o
+       JOIN festivals f ON f.id = o.festival_id
+       WHERE o.date_key = ? AND f.name_en = ?`,
+      f.dateKey,
+      f.nameEn
+    );
+    if (existing) continue;
     const res = await db.runAsync(
       `INSERT INTO festivals (name_ta, name_en, category, is_holiday, description_ta, description_en)
        VALUES (?, ?, ?, ?, NULL, NULL)`,

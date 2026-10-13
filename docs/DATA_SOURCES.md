@@ -39,9 +39,11 @@ exact.
 
 - Paksha (Shukla/Krishna) is a structural approximation (day 1–15 vs 16–30) and
   is labelled as computed.
-- **Amavasai and Pournami come exclusively from the verified dataset**
-  (`src/data/seedData.ts` → AM_POURNA_RECORDS), never computed. The same rule
-  applies to Pradosham and Ekadasi lists.
+- **Amavasai and Pournami dates are engine-derived** at import time
+  (`src/services/panchangamAstro.ts`, Meeus-anchored sidereal series) using
+  the printed-calendar junction-day rule; so are the Pradosham (trayodashi)
+  and Ekadasi (tithi 11) lists. The Meeus example anchors these computations
+  in `src/services/__tests__/panchangamAstro.test.ts`.
 
 ## Row verification flags
 

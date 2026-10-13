@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View, Pressable, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,6 +14,8 @@ import { LoadingView } from '@/components/LoadingView';
 import { EmptyState } from '@/components/EmptyState';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useT } from '@/localization';
+import type { FestivalOccurrence } from '@/types';
+import { tamilMonthsSpanningGregorianMonth } from '@/features/calendar/tamilMonthSpan';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useHomeData, type HomeData } from '@/features/home/useHomeData';
 import { spacing } from '@/theme/spacing';
@@ -29,13 +31,31 @@ export default function HomeScreen() {
   const todayKey = useMemo(() => localTodayKey(), []);
   const todayParts = useMemo(() => parseDateKey(todayKey), [todayKey]);
 
+
   const [selectedKey, setSelectedKey] = useState<string>(todayKey);
   const { data, loading, refetch } = useHomeData(selectedKey);
 
-  const onSelectDate = useCallback((key: string) => {
-    setSelectedKey(key);
-    router.push({ pathname: '/day-details', params: { date: key } });
-  }, [router]);
+  // Double-tap detection on the calendar grid: a second tap on the same date
+  // within the double-tap window opens the full day-details page; otherwise
+  // the tap just selects the date and reveals the quick details inline below.
+  const lastTapRef = useRef<{ key: string; time: number } | null>(null);
+  const DOUBLE_TAP_MS = 300;
+
+  const onSelectDate = useCallback(
+    (key: string) => {
+      const now = Date.now();
+      const last = lastTapRef.current;
+      if (last && last.key === key && now - last.time < DOUBLE_TAP_MS) {
+        lastTapRef.current = null;
+        setSelectedKey(key);
+        router.push({ pathname: '/day-details', params: { date: key } });
+        return;
+      }
+      lastTapRef.current = { key, time: now };
+      setSelectedKey(key);
+    },
+    [router]
+  );
 
   if (loading && !data) {
     return <LoadingView label={t('loading')} />;
@@ -74,12 +94,26 @@ export default function HomeScreen() {
           <>
             <SectionHeader title={t('panchangamSummary')} />
             <Card style={{ padding: spacing.lg, marginBottom: spacing.xl }}>
-              <TimeRow label={t('rahuKalam')} value={data.selectedPanchang.rahuKalam} />
-              <TimeRow label={t('yamagandam')} value={data.selectedPanchang.yamagandam} />
-              <TimeRow label={t('kuligai')} value={data.selectedPanchang.kuligai} />
-              <TimeRow label={t('nallaNeram')} value={data.selectedPanchang.nallaNeram} approximate={!data.selectedVerified} />
-              <TimeRow label={t('sunrise')} value={data.selectedPanchang.sunrise} approximate={!data.selectedVerified} />
-              <TimeRow label={t('sunset')} value={data.selectedPanchang.sunset} approximate={!data.selectedVerified} />
+              {/* Printed-calendar order: Nalla Neram first. */}
+              <TimeRow label={t('nallaNeram')} value={data.selectedPanchang.nallaNeram} approximate={!data.selectedVerified} language={language} />
+              <TimeRow label={t('sunrise')} value={data.selectedPanchang.sunrise} approximate={!data.selectedVerified} language={language} />
+              <TimeRow label={t('sunset')} value={data.selectedPanchang.sunset} approximate={!data.selectedVerified} language={language} />
+              <TimeRow label={t('rahuKalam')} value={data.selectedPanchang.rahuKalam} language={language} />
+              <TimeRow label={t('yamagandam')} value={data.selectedPanchang.yamagandam} language={language} />
+              <TimeRow label={t('kuligai')} value={data.selectedPanchang.kuligai} language={language} />
+              <TimeRow label={t('tithi')} value={data.selectedPanchang.tithi} language={language} />
+              <TimeRow label={t('nakshatra')} value={data.selectedPanchang.nakshatra} language={language} />
+              <TimeRow label={t('yoga')} value={data.selectedPanchang.yoga} language={language} />
+              <TimeRow label={t('karana')} value={data.selectedPanchang.karana} language={language} />
+              <FestivalsInline
+                t={t}
+                language={language}
+                festivals={data.dayFestivals}
+                observances={data.dayObservances}
+              />
+              <ThemedText variant="caption" color="secondary" style={{ marginTop: spacing.md }}>
+                {t('doubleTapHint')}
+              </ThemedText>
               <Pressable onPress={() => router.push({ pathname: '/day-details', params: { date: selectedKey } })}>
                 <View style={{ alignSelf: 'flex-end', marginTop: spacing.md }}>
                   <ThemedText variant="small" color="primary" weight="medium">
@@ -117,6 +151,42 @@ export default function HomeScreen() {
         />
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+/** Festivals & observances of the currently selected date, inline on Home. */
+function FestivalsInline({
+  t,
+  language,
+  festivals,
+  observances,
+}: {
+  t: (k: string) => string;
+  language: string;
+  festivals: FestivalOccurrence[];
+  observances: { kind: string; nameTa: string; nameEn: string }[];
+}) {
+  const hasAny = festivals.length > 0 || observances.length > 0;
+  return (
+    <View style={{ marginTop: spacing.lg }}>
+      <ThemedText variant="small" weight="medium" color="secondary">
+        {t('festivalsObservances')}
+      </ThemedText>
+      {hasAny ? (
+        <View style={{ marginTop: 4 }}>
+          {festivals.map((f) => (
+            <FestivalRow key={f.id} title={language === 'ta' ? f.nameTa : f.nameEn} subtitle={f.isHoliday ? t('holiday') : null} dateLabel={''} festivalDotColor />
+          ))}
+          {observances.map((o) => (
+            <FestivalRow key={o.kind} title={language === 'ta' ? o.nameTa : o.nameEn} dateLabel={''} />
+          ))}
+        </View>
+      ) : (
+        <ThemedText variant="small" color="secondary" style={{ marginTop: 4 }}>
+          {t('festivalUnavailable')}
+        </ThemedText>
+      )}
+    </View>
   );
 }
 
@@ -163,6 +233,10 @@ function TodayHero({
   t: (k: string) => string;
 }) {
   const parts = parseDateKey(selectedKey);
+  const selectedTamilMonthName = useMemo(
+    () => tamilMonthsSpanningGregorianMonth(parts.year, parts.month, language as 'ta' | 'en'),
+    [parts.year, parts.month, language]
+  );
   return (
     <Card style={{ padding: spacing.lg, marginBottom: spacing.xl }}>
       <ThemedText variant="small" color="secondary">
@@ -177,6 +251,7 @@ function TodayHero({
       <View style={{ marginTop: spacing.lg }}>
         <MonthSelector
           monthName={data.selectedMonthName}
+          tamilMonthName={selectedTamilMonthName}
           year={parts.year}
           numerals={String(parts.year)}
           onPrev={() => onNav(shiftMonth(selectedKey, -1))}

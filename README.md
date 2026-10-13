@@ -129,8 +129,9 @@ approximate boundary policy. Highlights:
 - **Thai Pongal** = 14 Jan 2026 (Thai 1) — verified.
 - Govt of Tamil Nadu 2026 holiday list dates are imported with their source
   string (`verified = 1`); Amavasai/Pournami/Pradosham/Ekadasi dates are
-  imported from the verified dataset with sources.
-- Panchangam Rahu/Yama/Kuligai segments are computed by classical weekday
+  derived from the bundled Meeus-anchored sidereal engine at import time
+  (dataset 2026.10-subset.2 onward).
+- Panchangam Rahu/Yama/Kuligai segments follow the printed-calendar weekday
   mapping and flagged `approximate` near solar-ingress boundaries; the UI renders
   unverified values with an ≈ marker rather than implying certified precision.
 - The Intl-based `tamil` calendar is NOT used: Node/ICU lacks support for it and

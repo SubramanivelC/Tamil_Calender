@@ -74,7 +74,7 @@ export default function AddEventScreen() {
             dateKey: repeatYearly ? `${dateKey.slice(0, 4)}-${dateKey.slice(5)}` : dateKey,
             time: reminderTime,
             title: title.trim(),
-            body: language === 'ta' ? t('eventReminderBody') : 'Event reminder',
+            body: t('eventReminderBody'),
             repeat: repeatYearly ? 'yearly' : 'none',
             enabled: true,
             notificationId: null,
@@ -94,7 +94,7 @@ export default function AddEventScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
       <View style={styles.topBar}>
-        <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back" hitSlop={8}>
+        <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel={t('back')}>
           <Ionicons name="arrow-back" size={22} color={colors.text} />
         </Pressable>
         <ThemedText variant="h4" weight="bold" style={{ flex: 1, textAlign: 'center' }}>
@@ -209,7 +209,7 @@ export default function AddEventScreen() {
             },
           ]}
         >
-          <ThemedText variant="body" weight="medium" color="onMaroon" tamil={false}>
+          <ThemedText variant="body" weight="medium" color="onMaroon">
             {t('saveEvent')}
           </ThemedText>
         </Pressable>

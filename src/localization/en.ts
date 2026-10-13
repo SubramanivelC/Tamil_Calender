@@ -36,6 +36,7 @@ export const enDict = {
   reminders: 'Reminders',
   seeAll: 'See all',
   viewDetails: 'View details',
+  doubleTapHint: 'Double-tap a date to open full details',
 
   // Calendar
   previousMonth: 'Previous month',
@@ -173,4 +174,7 @@ export const enDict = {
   error: 'Error',
   dbInitFailed: 'Failed to initialize the database',
   retry: 'Retry',
+
+  // Navigation
+  back: 'Back',
 } as const;

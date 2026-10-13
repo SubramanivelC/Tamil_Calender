@@ -28,6 +28,7 @@ export default function SettingsScreen() {
   const t = useT();
   const { colors } = useThemeColors();
   const settings = useSettingsStore();
+  const language = settings.language;
 
   const [datasetVersion, setDatasetVersion] = useState<string>(DATASET_VERSION);
   const [notifPermission, setNotifPermission] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
@@ -125,7 +126,14 @@ export default function SettingsScreen() {
             value={settings.firstDayOfWeek}
             onChange={settings.setFirstDayOfWeek}
           />
-          <TimeRow label={t('dataCoverage')} value={`${NAVIGABLE_START_YEAR}–${NAVIGABLE_END_YEAR} (calendar); ${DATASET_START_YEAR}–${DATASET_END_YEAR} (verified data)`} />
+          <TimeRow
+            label={t('dataCoverage')}
+            value={
+              language === 'ta'
+                ? `${NAVIGABLE_START_YEAR}–${NAVIGABLE_END_YEAR} (நாட்காட்டி); ${DATASET_START_YEAR}–${DATASET_END_YEAR} (சரிபார்க்கப்பட்ட தரவு)`
+                : `${NAVIGABLE_START_YEAR}–${NAVIGABLE_END_YEAR} (calendar); ${DATASET_START_YEAR}–${DATASET_END_YEAR} (verified data)`
+            }
+          />
         </ThemedView>
 
         <SectionHeader title={t('notifications')} />
@@ -163,8 +171,8 @@ export default function SettingsScreen() {
 
         <SectionHeader title={t('about')} />
         <ThemedView variant="surface" style={styles.group}>
-          <TimeRow label={t('appVersion')} value={String(Constants.expoConfig?.version ?? '1.0.0')} />
-          <TimeRow label={t('datasetVersion')} value={datasetVersion} />
+          <TimeRow label={t('appVersion')} value={String(Constants.expoConfig?.version ?? '1.0.0')} language={language} />
+          <TimeRow label={t('datasetVersion')} value={datasetVersion} language={language} />
           <Pressable
             onPress={() => Linking.openURL('https://github.com/thirunellai/docs/calendar-dataset.md')}
             accessibilityRole="link"

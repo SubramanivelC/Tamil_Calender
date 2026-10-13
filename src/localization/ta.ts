@@ -38,6 +38,7 @@ export const taDict = {
   reminders: 'நினைவூட்டல்கள்',
   seeAll: 'அனைத்தையும் காட்டு',
   viewDetails: 'விவரங்கள்',
+  doubleTapHint: 'முழு விவரங்களுக்கு தேதியை இருமுறை தட்டுங்கள்',
 
   // Calendar
   previousMonth: 'முந்தைய மாதம்',
@@ -175,6 +176,9 @@ export const taDict = {
   error: 'பிழை',
   dbInitFailed: 'தரவுத்தளம் தொடங்க முடியவில்லை',
   retry: 'மீண்டும் முயற்சி',
+
+  // Navigation (no anglicisms in Tamil mode)
+  back: 'பின்செல்',
 } as const;
 
 export type TaDict = typeof taDict;

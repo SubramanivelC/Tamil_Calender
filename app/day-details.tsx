@@ -12,6 +12,7 @@ import { LoadingView } from '@/components/LoadingView';
 import { EmptyState } from '@/components/EmptyState';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useT } from '@/localization';
+import { cleanBilingualValue } from '@/utils/bilingual';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useDayDetails } from '@/features/daydetails/useDayDetails';
 import { saveNote as saveNoteToDb } from '@/database/repositories/userDataRepo';
@@ -130,11 +131,12 @@ export default function DayDetailsScreen() {
   }
 
   const verified = data.panchangam.verified;
+  const cleanedPaksha = data.pakshaLabel ? cleanBilingualValue(data.pakshaLabel, language) : null;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
       <View style={styles.topBar}>
-        <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back" hitSlop={8}>
+        <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel={t('back')}>
           <Ionicons name="arrow-back" size={22} color={colors.text} />
         </Pressable>
         <View style={styles.topBarActions}>
@@ -160,40 +162,40 @@ export default function DayDetailsScreen() {
             {data.gregorianLabel}
           </ThemedText>
           <View style={styles.metaRow}>
-            <ThemedText variant="body" color="secondary">
+            <ThemedText variant="body" color="secondary" style={styles.metaRowKey}>
               {t('tamilDate')}:
             </ThemedText>
-            <ThemedText variant="body" color="primary" weight="medium">
+            <ThemedText variant="body" color="primary" weight="medium" style={styles.metaRowValue}>
               {data.tamilDay !== null && data.tamilMonthLabel
                 ? `${data.tamilMonthLabel} ${data.tamilDay}${data.tamilYearLabel ? `, ${data.tamilYearLabel}` : ''}`
                 : `${t('dataUnavailableTitle')}`}
             </ThemedText>
           </View>
-          {data.pakshaLabel ? (
+          {cleanedPaksha ? (
             <View style={styles.metaRow}>
-              <ThemedText variant="body" color="secondary">
+              <ThemedText variant="body" color="secondary" style={styles.metaRowKey}>
                 {t('paksha')}:
               </ThemedText>
-              <ThemedText variant="body">{data.pakshaLabel}</ThemedText>
+              <ThemedText variant="body" style={styles.metaRowValue}>{cleanedPaksha}</ThemedText>
             </View>
           ) : null}
         </Card>
 
-        {/* Panchangam */}
+        {/* Panchangam — printed-calendar order: Nalla Neram first */}
         <SectionHeader title={t('panchangamSummary')} />
         <Card style={{ padding: spacing.lg, marginBottom: spacing.xl }}>
-          <TimeRow label={t('tithi')} value={data.panchangam.record.tithi} />
-          <TimeRow label={t('nakshatra')} value={data.panchangam.record.nakshatra} />
-          <TimeRow label={t('yoga')} value={data.panchangam.record.yoga} />
-          <TimeRow label={t('karana')} value={data.panchangam.record.karana} />
-          <TimeRow label={t('rahuKalam')} value={data.panchangam.record.rahuKalam} />
-          <TimeRow label={t('yamagandam')} value={data.panchangam.record.yamagandam} />
-          <TimeRow label={t('kuligai')} value={data.panchangam.record.kuligai} />
-          <TimeRow label={t('nallaNeram')} value={data.panchangam.record.nallaNeram} approximate={!verified} />
-          <TimeRow label={t('sunrise')} value={data.panchangam.record.sunrise} approximate={!verified} />
-          <TimeRow label={t('sunset')} value={data.panchangam.record.sunset} approximate={!verified} />
-          <TimeRow label={t('moonrise')} value={data.panchangam.record.moonrise} />
-          <TimeRow label={t('moonset')} value={data.panchangam.record.moonset} />
+          <TimeRow label={t('nallaNeram')} value={data.panchangam.record.nallaNeram} approximate={!verified} language={language} />
+          <TimeRow label={t('sunrise')} value={data.panchangam.record.sunrise} approximate={!verified} language={language} />
+          <TimeRow label={t('sunset')} value={data.panchangam.record.sunset} approximate={!verified} language={language} />
+          <TimeRow label={t('rahuKalam')} value={data.panchangam.record.rahuKalam} language={language} />
+          <TimeRow label={t('yamagandam')} value={data.panchangam.record.yamagandam} language={language} />
+          <TimeRow label={t('kuligai')} value={data.panchangam.record.kuligai} language={language} />
+          <TimeRow label={t('tithi')} value={data.panchangam.record.tithi} language={language} />
+          <TimeRow label={t('nakshatra')} value={data.panchangam.record.nakshatra} language={language} />
+          <TimeRow label={t('yoga')} value={data.panchangam.record.yoga} language={language} />
+          <TimeRow label={t('karana')} value={data.panchangam.record.karana} language={language} />
+          <TimeRow label={t('moonrise')} value={data.panchangam.record.moonrise} language={language} />
+          <TimeRow label={t('moonset')} value={data.panchangam.record.moonset} language={language} />
         </Card>
 
         {/* Festivals & observances */}
@@ -359,6 +361,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 8,
+    gap: 8,
+  },
+  metaRowKey: {
+    flexShrink: 1,
+    paddingRight: 4,
+  },
+  metaRowValue: {
+    flex: 1,
+    flexShrink: 1,
+    textAlign: 'right',
   },
   noteInput: {
     minHeight: 70,

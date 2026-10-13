@@ -81,9 +81,17 @@ export function convertToTamil(date: Date): TamilConversion {
     const onOrAfterStart =
       gMonth > w.gregMonthStart ||
       (gMonth === w.gregMonthStart && gDay >= w.gregDayStart);
-    const beforeNext =
-      gMonth < next.gregMonthStart ||
-      (gMonth === next.gregMonthStart && gDay < next.gregDayStart);
+    // The window list is sorted by (gregMonthStart, gregDayStart). When the
+    // next window wraps to the following Gregorian year (only Margazhi→Thai),
+    // every same-year date after this window's start qualifies until Thai 1
+    // of the next year — so treat the ceiling as crossed (year-wrap case).
+    const nextWrapsYear =
+      next.gregMonthStart < w.gregMonthStart ||
+      (next.gregMonthStart === w.gregMonthStart && next.gregDayStart <= w.gregDayStart);
+    const beforeNext = nextWrapsYear
+      ? true
+      : gMonth < next.gregMonthStart ||
+        (gMonth === next.gregMonthStart && gDay < next.gregDayStart);
     if (onOrAfterStart && beforeNext) {
       active = w;
       break;
