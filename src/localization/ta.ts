@@ -92,6 +92,7 @@ export const taDict = {
   annualFestivalCalendar: 'வருடாந்திர பண்டிகை நாட்காட்டி',
   monthlyFestivals: 'மாத பண்டிகைகள்',
   holiday: 'அரசு விடுமுறை',
+  festival: 'பண்டிகை',
 
   // Search
   searchPlaceholder: 'பண்டிகை, தேதி, குறிப்பு தேடுங்கள்…',

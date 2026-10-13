@@ -90,6 +90,7 @@ export const enDict = {
   annualFestivalCalendar: 'Annual festival calendar',
   monthlyFestivals: 'Monthly festivals',
   holiday: 'Public holiday',
+  festival: 'Festival',
 
   // Search
   searchPlaceholder: 'Search festivals, dates, notes…',

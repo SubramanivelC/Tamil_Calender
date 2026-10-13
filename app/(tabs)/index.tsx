@@ -90,10 +90,13 @@ export default function HomeScreen() {
           />
         )}
 
-        {data ? (
-          <>
-            <SectionHeader title={t('panchangamSummary')} />
-            <Card style={{ padding: spacing.lg, marginBottom: spacing.xl }}>
+        {/* Everything below the calendar gets side margins (the grid above
+            computes its own column widths for the full card width, so the
+            inset starts below it). */}
+        <View style={{ paddingHorizontal: spacing.lg }}>
+          {data ? (
+            <>
+              <SectionHeader title={t('panchangamSummary')} />            <Card style={{ padding: spacing.lg, marginBottom: spacing.xl }}>
               {/* Printed-calendar order: Nalla Neram first. */}
               <TimeRow label={t('nallaNeram')} value={data.selectedPanchang.nallaNeram} approximate={!data.selectedVerified} language={language} />
               <TimeRow label={t('sunrise')} value={data.selectedPanchang.sunrise} approximate={!data.selectedVerified} language={language} />
@@ -123,32 +126,33 @@ export default function HomeScreen() {
               </Pressable>
             </Card>
 
-            <SectionHeader title={t('upcomingFestivals')} actionLabel={t('seeAll')} onAction={() => router.push('/(tabs)/festivals')} />
-            <View style={{ marginBottom: spacing.xl }}>
-              {data.upcoming.map((f) => (
-                <FestivalRow
-                  key={`${f.festivalId}-${f.dateKey}`}
-                  title={t('language') === 'ta' ? f.nameTa : f.nameEn}
-                  dateLabel={f.dateKey}
-                  onPress={() => router.push({ pathname: '/day-details', params: { date: f.dateKey } })}
-                />
-              ))}
-              {data.upcoming.length === 0 ? (
-                <ThemedText variant="small" color="secondary">
-                  {t('festivalUnavailable')}
-                </ThemedText>
-              ) : null}
-            </View>
-          </>
-        ) : null}
+              <SectionHeader title={t('upcomingFestivals')} actionLabel={t('seeAll')} onAction={() => router.push('/(tabs)/festivals')} />
+              <View style={{ marginBottom: spacing.xl }}>
+                {data.upcoming.map((f) => (
+                  <FestivalRow
+                    key={`${f.festivalId}-${f.dateKey}`}
+                    title={t('language') === 'ta' ? f.nameTa : f.nameEn}
+                    dateLabel={f.dateKey}
+                    onPress={() => router.push({ pathname: '/day-details', params: { date: f.dateKey } })}
+                  />
+                ))}
+                {data.upcoming.length === 0 ? (
+                  <ThemedText variant="small" color="secondary">
+                    {t('festivalUnavailable')}
+                  </ThemedText>
+                ) : null}
+              </View>
+            </>
+          ) : null}
 
-        <QuickActions
-          t={t}
-          onAnnual={() => router.push('/(tabs)/calendar?view=annual')}
-          onFestivals={() => router.push('/(tabs)/festivals')}
-          onSearch={() => router.push('/(tabs)/search')}
-          onReminders={() => router.push('/day-details?panel=reminders')}
-        />
+          <QuickActions
+            t={t}
+            onAnnual={() => router.push('/(tabs)/calendar?view=annual')}
+            onFestivals={() => router.push('/(tabs)/festivals')}
+            onSearch={() => router.push('/(tabs)/search')}
+            onReminders={() => router.push('/day-details?panel=reminders')}
+          />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

@@ -131,11 +131,11 @@ export default function CalendarScreen() {
           <ThemedText variant="caption" color="secondary">
             {t('amavasai')}
           </ThemedText>
-          <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: colors.textSecondary }} />
+          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.text }} />
           <ThemedText variant="caption" color="secondary">
             {t('pournami')}
           </ThemedText>
-          <View style={{ width: 5, height: 5, borderRadius: 2.5, borderWidth: 1, borderColor: colors.primary }} />
+          <View style={{ width: 6, height: 6, borderRadius: 3, borderWidth: 1.5, borderColor: colors.gold }} />
           <ThemedText variant="caption" color="secondary">
             {t('festival')}
           </ThemedText>

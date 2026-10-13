@@ -112,11 +112,11 @@ export function AnnualCalendar({
         <ThemedText variant="caption" color="secondary">
           {t('amavasai')}
         </ThemedText>
-        <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: colors.textSecondary }} />
+        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.text }} />
         <ThemedText variant="caption" color="secondary">
           {t('pournami')}
         </ThemedText>
-        <View style={{ width: 5, height: 5, borderRadius: 2.5, borderWidth: 1, borderColor: colors.primary }} />
+        <View style={{ width: 6, height: 6, borderRadius: 3, borderWidth: 1.5, borderColor: colors.gold }} />
         <ThemedText variant="caption" color="secondary">
           {t('festival')}
         </ThemedText>
@@ -141,6 +141,8 @@ export function AnnualCalendar({
               primary={colors.primary}
               festival={colors.festival}
               muted={colors.textSecondary}
+              gold={colors.gold}
+              text={colors.text}
             />
           </Card>
         ))}
@@ -157,6 +159,8 @@ export function MiniMonth({
   primary,
   festival,
   muted,
+  gold,
+  text,
 }: {
   cells: DayCell[];
   todayKey: string;
@@ -165,6 +169,8 @@ export function MiniMonth({
   primary: string;
   festival: string;
   muted: string;
+  gold: string;
+  text: string;
 }) {
   const rows: DayCell[][] = [];
   for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7));
@@ -212,7 +218,7 @@ export function MiniMonth({
               ) : cell.isAmavasai ? (
                 <View
                   style={{
-                    width: 5,
+                    width: 7,
                     height: 4,
                     justifyContent: 'center',
                     alignItems: 'center',
@@ -220,17 +226,17 @@ export function MiniMonth({
                 >
                   <View
                     style={{
-                      width: 5,
-                      height: 5,
-                      borderRadius: 2.5,
-                      backgroundColor: muted,
+                      width: 6,
+                      height: 6,
+                      borderRadius: 3,
+                      backgroundColor: text,
                     }}
                   />
                 </View>
               ) : cell.isPournami ? (
                 <View
                   style={{
-                    width: 5,
+                    width: 7,
                     height: 4,
                     justifyContent: 'center',
                     alignItems: 'center',
@@ -238,11 +244,11 @@ export function MiniMonth({
                 >
                   <View
                     style={{
-                      width: 4,
-                      height: 4,
-                      borderRadius: 2,
-                      borderWidth: 1,
-                      borderColor: primary,
+                      width: 6,
+                      height: 6,
+                      borderRadius: 3,
+                      borderWidth: 1.5,
+                      borderColor: gold,
                     }}
                   />
                 </View>

@@ -116,22 +116,22 @@ function CalendarCell({
               }}
             />
           ) : cell.isAmavasai || cell.isPournami ? (
-            <ThemedText
-              variant="caption"
-              tamil
+            <View
+              pointerEvents="none"
               style={{
-                fontSize: 8,
-                lineHeight: 9,
+                width: 9,
+                height: 9,
+                borderRadius: 4.5,
                 marginTop: 2,
-                color: today
-                  ? theme.colors.gold
-                  : cell.isAmavasai
-                    ? theme.colors.textSecondary
-                    : theme.colors.primary,
+                borderWidth: cell.isPournami ? 1.5 : 0,
+                borderColor: theme.colors.gold,
+                backgroundColor: cell.isAmavasai
+                  ? today
+                    ? theme.colors.textOnMaroon
+                    : theme.colors.text
+                  : 'transparent',
               }}
-            >
-              {cell.isAmavasai ? '●' : '○'}
-            </ThemedText>
+            />
           ) : cell.hasEvent ? (
             <View
               style={{
