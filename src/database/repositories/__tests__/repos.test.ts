@@ -115,13 +115,13 @@ describe('user data repositories', () => {
   });
 
   test('observances by date (amavasai/pournami/pradosham/ekadasi)', async () => {
-    // Dates follow the engine-derived lunar tables (dataset 2026.10-subset.2):
-    // conjunction Jan 19, trayodashi Jan 16.
-    const amd = await getObservancesForDate('2026-01-19');
+    // Dates follow the engine-derived lunar tables (dataset 2026.10-subset.6,
+    // printed tithi-start junction rule): amavasai Jan 18, trayodashi Jan 16.
+    const amd = await getObservancesForDate('2026-01-18');
     expect(amd.some((o) => o.kind === 'amavasai')).toBe(true);
     // Exact-date queries must return ONLY that date's rows — the computed
     // year overlay must never leak other dates in (home/day-details bug).
-    expect(amd.every((o) => o.date_key === '2026-01-19')).toBe(true);
+    expect(amd.every((o) => o.date_key === '2026-01-18')).toBe(true);
     expect(amd.length).toBeLessThanOrEqual(2); // amavasai + at most one other kind
     const quiet = await getObservancesForDate('2026-01-20');
     expect(quiet).toEqual([]);
@@ -136,7 +136,7 @@ describe('user data repositories', () => {
     expect(yearRows.some((o) => o.kind === 'pournami')).toBe(true);
     // Every seeded observance row for that year is returned (no truncation).
     const all = new Set(yearRows.map((o) => o.date_key));
-    expect(all.has('2026-01-19')).toBe(true); // seeded amavasai
+    expect(all.has('2026-01-18')).toBe(true); // seeded amavasai (printed day)
     // The month query must be the year rows intersected with January.
     const january = await getObservancesForMonth(2026, 1);
     expect(january.every((o) => all.has(o.date_key))).toBe(true);

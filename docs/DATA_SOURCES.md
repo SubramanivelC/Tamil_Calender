@@ -46,9 +46,19 @@ exact.
 
 - Paksha (Shukla/Krishna) is a structural approximation (day 1–15 vs 16–30) and
   is labelled as computed.
-- **Amavasai and Pournami dates are engine-derived** at import time
-  (`src/services/panchangamAstro.ts`, Meeus-anchored sidereal series) using
-  the printed-calendar junction-day rule; so are the Pradosham (trayodashi)
+- **Amavasai and Pournami dates**: the printed Tamil calendars label the day
+  on which the phase tithi BEGINS (amavasai tithi spans elongation
+  [348°,360°), pournami tithi spans [168°,180°)) — not the conjunction
+  instant's day. Within the dataset window, the 2026 rows are
+  **transcription-verified from the published lists**
+  (tamildailycalendar.com amavasai/pournami 2026, corroborated by Drik
+  Panchang Chennai) and are the truth anchor (`data/__tests__/lunarPhases.test.ts`);
+  2027–2029 and all other navigable years are engine-derived
+  (`src/data/lunarPhases.ts` tithi-start junction rule), with an occasional
+  ±1-day possibility on junction instants within the truncated series'
+  hour-scale precision. A phase spans two calendar days in printing sources —
+  the app always marks exactly ONE day (the printed convention), never two.
+  So are the Pradosham (trayodashi)
   and Ekadasi (tithi 11) lists. The Meeus example anchors these computations
   in `src/services/__tests__/panchangamAstro.test.ts`.
 - The same generators live in `src/data/lunarPhases.ts` (range-parameterized);

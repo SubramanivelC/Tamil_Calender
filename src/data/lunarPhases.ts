@@ -59,12 +59,32 @@ function eachDay(
       }
     }
   }
-}
-
-/**
+}/**
  * Amavasai + Pournami calendar days over an inclusive Gregorian year range.
  * O(days); ~7 ms/year with the truncated-series ephemeris.
+ *
+ * Rule (printed Tamil daily-calendar convention): the calendar day on which
+ * the PHASE TITHI BEGINS. The amavasai tithi (number 30) spans elongation
+ * [348°, 360°) starting ~24h before the conjunction; the pournami (purnima)
+ * tithi (15) spans [168°, 180°) ending at the full moon. Marking the
+ * tithi-start day — not the conjunction instant's day — reproduces the
+ * published TamilDailyCalendar/Drik Chennai lists exactly (see the
+ * published-table regression test): junction instants near midnight made
+ * half the conjunction-day labels land one day late.
  */
+const AMAVASAI_TITHI_BEGIN = 348; // elong 348° = start of amavasai tithi
+const POURNAMI_TITHI_BEGIN = 168; // elong 168° = start of purnima tithi
+
+function crossingDay(curKey: string, nextKey: string, a: number, b: number, target: number): string | null {
+  const crossed = a < target && (b >= target || b < a); // b<a => wrapped past 360
+  if (!crossed) return null;
+  const span = b >= a ? b - a : b + 360 - a;
+  const offsetH = ((target - a) / span) * 24; // hours after cur-day 06:00 IST
+  // Junction: the first 18h after the 06:00 sample belong to the sample's own
+  // calendar day; later ones (past midnight) belong to the next day.
+  return offsetH < 18 ? curKey : nextKey;
+}
+
 export function amPournaForRange(startY: number, endY: number): LunarPhaseRecord[] {
   const rows: LunarPhaseRecord[] = [];
   const dates: { key: string; e: number }[] = [];
@@ -75,22 +95,10 @@ export function amPournaForRange(startY: number, endY: number): LunarPhaseRecord
     if (!cur || !next) continue;
     const a = cur.e;
     const b = next.e;
-    // Amavasai: elongation wrapping past 0 (a>180 falls to b<180).
-    if (a > 180 && b < 180) {
-      const offsetH = ((360 - a) / (b + (360 - a))) * 24;
-      rows.push({
-        dateKey: offsetH < 18 ? cur.key : next.key,
-        kind: 'amavasai',
-      });
-    }
-    // Pournami: elongation crossing 180 upward.
-    if (a < 180 && b > 180) {
-      const offsetH = ((180 - a) / (b - a)) * 24;
-      rows.push({
-        dateKey: offsetH < 18 ? cur.key : next.key,
-        kind: 'pournami',
-      });
-    }
+    const amKey = crossingDay(cur.key, next.key, a, b, AMAVASAI_TITHI_BEGIN);
+    if (amKey) rows.push({ dateKey: amKey, kind: 'amavasai' });
+    const porKey = crossingDay(cur.key, next.key, a, b, POURNAMI_TITHI_BEGIN);
+    if (porKey) rows.push({ dateKey: porKey, kind: 'pournami' });
   }
   return rows;
 }
