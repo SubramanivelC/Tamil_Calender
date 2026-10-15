@@ -119,6 +119,12 @@ describe('user data repositories', () => {
     // conjunction Jan 19, trayodashi Jan 16.
     const amd = await getObservancesForDate('2026-01-19');
     expect(amd.some((o) => o.kind === 'amavasai')).toBe(true);
+    // Exact-date queries must return ONLY that date's rows — the computed
+    // year overlay must never leak other dates in (home/day-details bug).
+    expect(amd.every((o) => o.date_key === '2026-01-19')).toBe(true);
+    expect(amd.length).toBeLessThanOrEqual(2); // amavasai + at most one other kind
+    const quiet = await getObservancesForDate('2026-01-20');
+    expect(quiet).toEqual([]);
     const pradosham = await getObservancesForDate('2026-01-16');
     expect(pradosham.some((o) => o.kind === 'pradosham')).toBe(true);
   });

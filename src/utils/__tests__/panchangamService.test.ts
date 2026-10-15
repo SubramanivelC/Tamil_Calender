@@ -1,6 +1,7 @@
 import {
   computeInauspiciousTimings,
   computeNallaNeramGowri,
+  computeSoolamParikaram,
   segmentToPeriod,
   minToHhmm,
   RAHU_SEGMENTS,
@@ -127,5 +128,36 @@ describe('panchangam timing service', () => {
     expect(computeNallaNeramGowri(6, { sunrise: '06:10', sunset: '17:30' })).toBe(
       '07:35 - 09:00 · 10:25 - 11:50 · 13:15 - 17:30'
     );
+  });
+
+  /**
+   * Vaara Soolam + Parigaram table, cross-checked against Tamil daily
+   * calendar sheets (Prokerala shoolam calculator Mon/Sat East, Wed North;
+   * tamilporutham & tamildailycalendar daily rows; Oneindia cardinal
+   * remedies). Bilingual strings must contain both languages for the
+   * cleanBilingualValue splitter.
+   */
+  test.each([
+    ['Sunday soolam West, jaggery', 0, 'மேற்கு / West', 'வெல்லம் / Jaggery'],
+    ['Monday soolam East, curd', 1, 'கிழக்கு / East', 'தயிர் / Curd'],
+    ['Tuesday soolam North, milk', 2, 'வடக்கு / North', 'பால் / Milk'],
+    ['Wednesday soolam North, milk', 3, 'வடக்கு / North', 'பால் / Milk'],
+    ['Thursday soolam South, oil', 4, 'தெற்கு / South', 'எண்ணெய் / Oil'],
+    ['Friday soolam West, jaggery', 5, 'மேற்கு / West', 'வெல்லம் / Jaggery'],
+    ['Saturday soolam East, curd', 6, 'கிழக்கு / East', 'தயிர் / Curd'],
+  ])('%s', (_label, weekday, direction, remedy) => {
+    const r = computeSoolamParikaram(weekday);
+    expect(r.soolam).toBe(direction);
+    expect(r.parikaram).toBe(remedy);
+    for (const v of [r.soolam, r.parikaram]) {
+      expect(v).toMatch(/[\u0B80-\u0BFF]/); // has Tamil segment
+      expect(v).toContain('/'); // has English segment
+    }
+  });
+
+  test('soolam weekday normalization wraps across the week boundary', () => {
+    expect(computeSoolamParikaram(7).soolam).toBe(computeSoolamParikaram(0).soolam);
+    expect(computeSoolamParikaram(9).soolam).toBe(computeSoolamParikaram(2).soolam);
+    expect(computeSoolamParikaram(-1).soolam).toBe(computeSoolamParikaram(6).soolam);
   });
 });

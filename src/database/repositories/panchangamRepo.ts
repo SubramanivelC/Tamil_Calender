@@ -1,7 +1,11 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { getDatabase } from '../client';
 import type { PanchangamRecord } from '@/types';
-import { computeInauspiciousTimings, computeNallaNeramGowri } from '@/services/panchangamService';
+import {
+  computeInauspiciousTimings,
+  computeNallaNeramGowri,
+  computeSoolamParikaram,
+} from '@/services/panchangamService';
 import { julianDay, lunarFieldsAtJd } from '@/services/panchangamAstro';
 import { approxSunriseSunset } from '@/data/seedData';
 import { convertToTamil } from '@/services/tamilCalendarService';
@@ -42,6 +46,7 @@ function rowToRecord(row: PanchangRow): PanchangamRecord {
     yamagandam: row.yamagandam,
     kuligai: row.kuligai,
     nallaNeram: row.nalla_neram,
+    ...computeSoolamParikaram(dateKeyToDate(row.date_key).getDay()),
   };
 }
 
@@ -91,6 +96,7 @@ export async function getPanchangamForDate(
     yamagandam: inauspicious.yamagandam,
     kuligai: inauspicious.kuligai,
     nallaNeram: computeNallaNeramGowri(date.getDay(), sun ?? { sunrise: null, sunset: null }),
+    ...computeSoolamParikaram(date.getDay()),
   };
   return { record, verified: false, source: null };
 }

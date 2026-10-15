@@ -8,7 +8,7 @@ export const NAVIGABLE_END_YEAR = 2100;
 
 /** years with bundled verified dataset rows. */
 export const DATASET_START_YEAR = 2026;
-export const DATASET_END_YEAR = 2027;
+export const DATASET_END_YEAR = 2029;
 
 /** Anchor for the 60-year Tamil cycle (docs/calendar-dataset.md). */
 export const TAMIL_CYCLE_ANCHOR_GREG_YEAR = 2022;

@@ -155,4 +155,30 @@ export function computeNallaNeramGowri(weekday: number, input: DayTimingsInput):
   return windows.map((w) => `${minToHhmm(w.start)} - ${minToHhmm(w.end)}`).join(' · ');
 }
 
+/**
+ * Vaara Soolam (இன்றைய சூலம்) — printed Tamil daily-sheet convention: the
+ * weekday-locked direction whose travel is avoided that day, plus its
+ * parigaram (பரிகாரம்) remedy food. Weekday order 0=Sun..6=Sat; cross-checked
+ * row-by-row against Tamil daily calendars (Prokerala: Mon/Sat East, Wed
+ * North; tamildailycalendar & tamilporutham daily rows; Oneindia cardinal
+ * remedies — East/தயிர், South/எண்ணெய், West/வெல்லம், North/பால்).
+ */
+export const SOOLAM_BY_WEEKDAY: readonly { soolam: string; parikaram: string }[] = [
+  { soolam: 'மேற்கு / West', parikaram: 'வெல்லம் / Jaggery' }, // Sun
+  { soolam: 'கிழக்கு / East', parikaram: 'தயிர் / Curd' }, // Mon
+  { soolam: 'வடக்கு / North', parikaram: 'பால் / Milk' }, // Tue
+  { soolam: 'வடக்கு / North', parikaram: 'பால் / Milk' }, // Wed
+  { soolam: 'தெற்கு / South', parikaram: 'எண்ணெய் / Oil' }, // Thu
+  { soolam: 'மேற்கு / West', parikaram: 'வெல்லம் / Jaggery' }, // Fri
+  { soolam: 'கிழக்கு / East', parikaram: 'தயிர் / Curd' }, // Sat
+] as const;
+
+/** Weekday → { soolam direction, parikaram remedy }; weekday is 0=Sun..6=Sat. */
+export function computeSoolamParikaram(weekday: number): { soolam: string; parikaram: string } {
+  const wd = ((weekday % 7) + 7) % 7;
+  const row = SOOLAM_BY_WEEKDAY[wd] ?? SOOLAM_BY_WEEKDAY[0];
+  return row ?? { soolam: 'மேற்கு / West', parikaram: 'வெல்லம் / Jaggery' };
+}
+
+
 

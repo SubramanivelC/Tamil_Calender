@@ -18,6 +18,8 @@ import type { FestivalOccurrence } from '@/types';
 import { tamilMonthsSpanningGregorianMonth } from '@/features/calendar/tamilMonthSpan';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useHomeData, type HomeData } from '@/features/home/useHomeData';
+import { useRasiPalam } from '@/features/rasiPalam/useRasiPalam';
+import { cleanBilingualValue } from '@/utils/bilingual';
 import { spacing } from '@/theme/spacing';
 import { localTodayKey, parseDateKey } from '@/utils/dates';
 
@@ -90,14 +92,19 @@ export default function HomeScreen() {
           />
         )}
 
-        {data ? (
-          <>
-            <SectionHeader title={t('panchangamSummary')} />
-            <Card style={{ padding: spacing.lg, marginBottom: spacing.xl }}>
-              {/* Printed-calendar order: Nalla Neram first. */}
-              <TimeRow label={t('nallaNeram')} value={data.selectedPanchang.nallaNeram} approximate={!data.selectedVerified} language={language} />
+        {/* Everything below the calendar gets side margins (the grid above
+            computes its own column widths for the full card width, so the
+            inset starts below it). */}
+        <View style={{ paddingHorizontal: spacing.lg }}>
+          {data ? (
+            <>
+              <SectionHeader title={t('panchangamSummary')} />
+              <Card style={{ padding: spacing.lg, marginBottom: spacing.xl }}>
+              {/* Sunrise/sunset first, then the Daivika/adi-daivika order
+                  used across the printed sheet. */}
               <TimeRow label={t('sunrise')} value={data.selectedPanchang.sunrise} approximate={!data.selectedVerified} language={language} />
               <TimeRow label={t('sunset')} value={data.selectedPanchang.sunset} approximate={!data.selectedVerified} language={language} />
+              <TimeRow label={t('nallaNeram')} value={data.selectedPanchang.nallaNeram} approximate={!data.selectedVerified} language={language} />
               <TimeRow label={t('rahuKalam')} value={data.selectedPanchang.rahuKalam} language={language} />
               <TimeRow label={t('yamagandam')} value={data.selectedPanchang.yamagandam} language={language} />
               <TimeRow label={t('kuligai')} value={data.selectedPanchang.kuligai} language={language} />
@@ -105,6 +112,8 @@ export default function HomeScreen() {
               <TimeRow label={t('nakshatra')} value={data.selectedPanchang.nakshatra} language={language} />
               <TimeRow label={t('yoga')} value={data.selectedPanchang.yoga} language={language} />
               <TimeRow label={t('karana')} value={data.selectedPanchang.karana} language={language} />
+              <TimeRow label={t('soolam')} value={data.selectedPanchang.soolam} language={language} />
+              <TimeRow label={t('parikaram')} value={data.selectedPanchang.parikaram} language={language} />
               <FestivalsInline
                 t={t}
                 language={language}
@@ -123,34 +132,104 @@ export default function HomeScreen() {
               </Pressable>
             </Card>
 
-            <SectionHeader title={t('upcomingFestivals')} actionLabel={t('seeAll')} onAction={() => router.push('/(tabs)/festivals')} />
-            <View style={{ marginBottom: spacing.xl }}>
-              {data.upcoming.map((f) => (
-                <FestivalRow
-                  key={`${f.festivalId}-${f.dateKey}`}
-                  title={t('language') === 'ta' ? f.nameTa : f.nameEn}
-                  dateLabel={f.dateKey}
-                  onPress={() => router.push({ pathname: '/day-details', params: { date: f.dateKey } })}
-                />
-              ))}
-              {data.upcoming.length === 0 ? (
-                <ThemedText variant="small" color="secondary">
-                  {t('festivalUnavailable')}
-                </ThemedText>
-              ) : null}
-            </View>
-          </>
-        ) : null}
+              <RasiPalamCard t={t} language={language} selectedKey={selectedKey} />
 
-        <QuickActions
-          t={t}
-          onAnnual={() => router.push('/(tabs)/calendar?view=annual')}
-          onFestivals={() => router.push('/(tabs)/festivals')}
-          onSearch={() => router.push('/(tabs)/search')}
-          onReminders={() => router.push('/day-details?panel=reminders')}
-        />
+              <SectionHeader title={t('upcomingFestivals')} actionLabel={t('seeAll')} onAction={() => router.push('/(tabs)/festivals')} />
+              <View style={{ marginBottom: spacing.xl }}>
+                {data.upcoming.map((f) => (
+                  <FestivalRow
+                    key={`${f.festivalId}-${f.dateKey}`}
+                    title={t('language') === 'ta' ? f.nameTa : f.nameEn}
+                    dateLabel={f.dateKey}
+                    onPress={() => router.push({ pathname: '/day-details', params: { date: f.dateKey } })}
+                  />
+                ))}
+                {data.upcoming.length === 0 ? (
+                  <ThemedText variant="small" color="secondary">
+                    {t('festivalUnavailable')}
+                  </ThemedText>
+                ) : null}
+              </View>
+            </>
+          ) : null}
+
+          <QuickActions
+            t={t}
+            onAnnual={() => router.push('/(tabs)/calendar?view=annual')}
+            onFestivals={() => router.push('/(tabs)/festivals')}
+            onSearch={() => router.push('/(tabs)/search')}
+            onReminders={() => router.push('/day-details?panel=reminders')}
+          />
+        </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+/** Today's rasi palam card, or a select-prompt when no moon sign is set. */
+function RasiPalamCard({
+  t,
+  language,
+  selectedKey,
+}: {
+  t: (k: string, vars?: Record<string, string | number>) => string;
+  language: string;
+  selectedKey: string;
+}) {
+  const router = useRouter();
+  // Hooks stay unconditional: useRasiPalam returns null while unconfigured.
+  const rasiPalam = useRasiPalam(selectedKey);
+  if (!rasiPalam) {
+    return (
+      <Card style={{ padding: spacing.lg, marginBottom: spacing.xl }}>
+        <ThemedText variant="h4" weight="bold">
+          {t('rasiPalam')}
+        </ThemedText>
+        <ThemedText variant="body" color="secondary" style={{ marginTop: 4 }}>
+          {t('rasiPalamPrompt')}
+        </ThemedText>
+        <Pressable
+          onPress={() => router.push('/(tabs)/my-rasi')}
+          accessibilityRole="button"
+          accessibilityLabel={t('selectRasiPalam')}
+          style={({ pressed }) => [styles.rasiPromptBtn, { opacity: pressed ? 0.8 : 1 }]}
+        >
+          <ThemedText variant="body" weight="medium" color="primary">
+            {t('selectRasiPalam')} →
+          </ThemedText>
+        </Pressable>
+      </Card>
+    );
+  }
+  const p = rasiPalam.palam;
+  return (
+    <Card style={{ padding: spacing.lg, marginBottom: spacing.xl }}>
+      <ThemedText variant="h4" weight="bold">
+        {t('rasiPalam')}
+      </ThemedText>
+      <ThemedText variant="caption" color="secondary" style={{ marginTop: 4 }}>
+        {cleanBilingualValue(rasiPalam.rasiName, language as 'ta' | 'en')}
+      </ThemedText>
+      <ThemedText variant="body" weight="medium" style={{ marginTop: spacing.md }}>
+        {cleanBilingualValue(p.headline, language as 'ta' | 'en')}
+      </ThemedText>
+      <ThemedText variant="caption" color="secondary" style={{ marginTop: 4 }}>
+        {t('moonTransitRow')}: {t('transitFromRasi', { n: p.transit })}
+      </ThemedText>
+      <ThemedText variant="body" style={{ marginTop: spacing.md }}>
+        {cleanBilingualValue(p.palam, language as 'ta' | 'en')}
+      </ThemedText>
+      <Pressable
+        onPress={() => router.push('/(tabs)/my-rasi')}
+        accessibilityRole="button"
+        accessibilityLabel={t('moreDetails')}
+        style={({ pressed }) => [styles.rasiPromptBtn, { opacity: pressed ? 0.8 : 1 }]}
+      >
+        <ThemedText variant="body" weight="medium" color="primary">
+          {t('moreDetails')} →
+        </ThemedText>
+      </Pressable>
+    </Card>
   );
 }
 
@@ -332,6 +411,13 @@ function QuickActions({
 }
 
 const styles = StyleSheet.create({
+  rasiPromptBtn: {
+    alignSelf: 'flex-start',
+    marginTop: spacing.md,
+    paddingVertical: 8,
+    minHeight: 40,
+    justifyContent: 'center',
+  },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',

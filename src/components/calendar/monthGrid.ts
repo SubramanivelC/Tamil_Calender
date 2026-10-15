@@ -13,6 +13,7 @@ export interface DayDecoration {
   tamilMonth?: number | null;
   isAmavasai?: boolean;
   isPournami?: boolean;
+  isSubhaMuhurtham?: boolean;
   hasEvent?: boolean;
 }
 
@@ -92,6 +93,7 @@ function makeCell(
     hasFestival: festival,
     isAmavasai: decor?.isAmavasai ?? false,
     isPournami: decor?.isPournami ?? false,
+    isSubhaMuhurtham: decor?.isSubhaMuhurtham ?? false,
     hasEvent: decor?.hasEvent ?? false,
   };
 }

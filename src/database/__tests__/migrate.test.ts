@@ -89,6 +89,7 @@ describe('bundled dataset import', () => {
     expect(byKind['pournami']).toBeGreaterThan(10);
     expect(byKind['pradosham']).toBeGreaterThan(10);
     expect(byKind['ekadasi']).toBeGreaterThan(10);
+    expect(byKind['subha_muhurtham']).toBeGreaterThan(50);
   });
 
   it('populates the search index from festivals', async () => {

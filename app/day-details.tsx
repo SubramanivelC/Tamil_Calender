@@ -149,8 +149,37 @@ export default function DayDetailsScreen() {
         </View>
       </View>
 
+      {/* Prev / next day — fixed above the scrolling content so it is
+          always visible without scrolling to the bottom. */}
+      <View style={styles.dayNav}>
+        <Pressable
+          onPress={() => router.setParams({ date: previousKey })}
+          accessibilityRole="button"
+          accessibilityLabel={t('previousDay')}
+          style={[styles.dayNavBtn, { minHeight: 44, minWidth: 44, justifyContent: 'center' }]}
+        >
+          <Ionicons name="chevron-back" size={20} color={colors.primary} />
+          <ThemedText variant="small" color="primary">
+            {t('previousDay')}
+          </ThemedText>
+        </Pressable>
+        <ThemedText variant="caption" color="secondary" style={styles.dayNavDate}>
+          {data.gregorianLabel}
+        </ThemedText>
+        <Pressable
+          onPress={() => router.setParams({ date: nextKey })}
+          accessibilityRole="button"
+          accessibilityLabel={t('nextDay')}
+          style={[styles.dayNavBtn, { minHeight: 44, minWidth: 44, justifyContent: 'center' }]}
+        >
+          <ThemedText variant="small" color="primary">
+            {t('nextDay')}
+          </ThemedText>
+          <Ionicons name="chevron-forward" size={20} color={colors.primary} />
+        </Pressable>
+      </View>
+
       <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxxl }}>
-        {/* Date hero */}
         <Card style={{ padding: spacing.lg, marginBottom: spacing.xl }}>
           <ThemedText variant="small" color="secondary">
             {dateKey}
@@ -158,9 +187,14 @@ export default function DayDetailsScreen() {
           <ThemedText variant="h2" weight="bold" style={{ marginTop: 4 }}>
             {data.weekdayLabel}
           </ThemedText>
-          <ThemedText variant="body" style={{ marginTop: 6 }}>
-            {data.gregorianLabel}
-          </ThemedText>
+          <View style={styles.metaRow}>
+            <ThemedText variant="body" color="secondary" style={styles.metaRowKey}>
+              {t('gregorianDate')}:
+            </ThemedText>
+            <ThemedText variant="body" style={styles.metaRowValue}>
+              {data.gregorianLabel}
+            </ThemedText>
+          </View>
           <View style={styles.metaRow}>
             <ThemedText variant="body" color="secondary" style={styles.metaRowKey}>
               {t('tamilDate')}:
@@ -171,22 +205,16 @@ export default function DayDetailsScreen() {
                 : `${t('dataUnavailableTitle')}`}
             </ThemedText>
           </View>
-          {cleanedPaksha ? (
-            <View style={styles.metaRow}>
-              <ThemedText variant="body" color="secondary" style={styles.metaRowKey}>
-                {t('paksha')}:
-              </ThemedText>
-              <ThemedText variant="body" style={styles.metaRowValue}>{cleanedPaksha}</ThemedText>
-            </View>
-          ) : null}
         </Card>
 
-        {/* Panchangam — printed-calendar order: Nalla Neram first */}
+        {/* Panchangam — sunrise/sunset first, then the Daivika/adi-daivika
+            printed-sheet order: Nalla Neram, Rahu, Yamagandam, Kuligai,
+            Tithi, Nakshatra, Yoga, Karana. */}
         <SectionHeader title={t('panchangamSummary')} />
         <Card style={{ padding: spacing.lg, marginBottom: spacing.xl }}>
-          <TimeRow label={t('nallaNeram')} value={data.panchangam.record.nallaNeram} approximate={!verified} language={language} />
           <TimeRow label={t('sunrise')} value={data.panchangam.record.sunrise} approximate={!verified} language={language} />
           <TimeRow label={t('sunset')} value={data.panchangam.record.sunset} approximate={!verified} language={language} />
+          <TimeRow label={t('nallaNeram')} value={data.panchangam.record.nallaNeram} approximate={!verified} language={language} />
           <TimeRow label={t('rahuKalam')} value={data.panchangam.record.rahuKalam} language={language} />
           <TimeRow label={t('yamagandam')} value={data.panchangam.record.yamagandam} language={language} />
           <TimeRow label={t('kuligai')} value={data.panchangam.record.kuligai} language={language} />
@@ -194,8 +222,13 @@ export default function DayDetailsScreen() {
           <TimeRow label={t('nakshatra')} value={data.panchangam.record.nakshatra} language={language} />
           <TimeRow label={t('yoga')} value={data.panchangam.record.yoga} language={language} />
           <TimeRow label={t('karana')} value={data.panchangam.record.karana} language={language} />
+          <TimeRow label={t('soolam')} value={data.panchangam.record.soolam} language={language} />
+          <TimeRow label={t('parikaram')} value={data.panchangam.record.parikaram} language={language} />
           <TimeRow label={t('moonrise')} value={data.panchangam.record.moonrise} language={language} />
           <TimeRow label={t('moonset')} value={data.panchangam.record.moonset} language={language} />
+          {cleanedPaksha ? (
+            <TimeRow label={t('paksha')} value={cleanedPaksha} language={language} />
+          ) : null}
         </Card>
 
         {/* Festivals & observances */}
@@ -315,31 +348,6 @@ export default function DayDetailsScreen() {
           ) : null}
         </View>
 
-        {/* Prev / next day */}
-        <View style={styles.dayNav}>
-          <Pressable
-            onPress={() => router.setParams({ date: previousKey })}
-            accessibilityRole="button"
-            accessibilityLabel={t('previousDay')}
-            style={[styles.dayNavBtn, { minHeight: 44, minWidth: 44, justifyContent: 'center' }]}
-          >
-            <Ionicons name="chevron-back" size={20} color={colors.primary} />
-            <ThemedText variant="small" color="primary">
-              {t('previousDay')}
-            </ThemedText>
-          </Pressable>
-          <Pressable
-            onPress={() => router.setParams({ date: nextKey })}
-            accessibilityRole="button"
-            accessibilityLabel={t('nextDay')}
-            style={[styles.dayNavBtn, { minHeight: 44, minWidth: 44, justifyContent: 'center' }]}
-          >
-            <ThemedText variant="small" color="primary">
-              {t('nextDay')}
-            </ThemedText>
-            <Ionicons name="chevron-forward" size={20} color={colors.primary} />
-          </Pressable>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -394,10 +402,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
   },
   dayNavBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
+  },
+  dayNavDate: {
+    flex: 1,
+    textAlign: 'center',
   },
 });

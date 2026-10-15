@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { ScrollView, View, Linking, Pressable, StyleSheet } from 'react-native';
+import { ScrollView, View, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
@@ -11,6 +11,10 @@ import { TimeRow } from '@/components/TimeRow';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useT } from '@/localization';
 import { useSettingsStore } from '@/store/settingsStore';
+import { requestPermission, scheduleDailyPalam } from '@/services/notificationService';
+import { RASI_NAMES, PADA_SPLIT_STAR_INDICES } from '@/data/rasiPalam';
+import { NAKSHATRA_NAMES } from '@/data/mappings';
+import { cleanBilingualValue } from '@/utils/bilingual';
 import type { ThemeMode } from '@/theme/theme';
 import type { FontScale } from '@/theme/typography';
 import { fontScaleFactors } from '@/theme/typography';
@@ -32,6 +36,9 @@ export default function SettingsScreen() {
 
   const [datasetVersion, setDatasetVersion] = useState<string>(DATASET_VERSION);
   const [notifPermission, setNotifPermission] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
+  const [rasiMode, setRasiMode] = useState<'rasi' | 'star'>(
+    useSettingsStore.getState().rasiPalamBirthStar !== null ? 'star' : 'rasi'
+  );
 
   useEffect(() => {
     void (async () => {
@@ -49,6 +56,29 @@ export default function SettingsScreen() {
       }
     })();
   }, []);
+
+  const applyDailyPalamSettings = useCallback(
+    async (enabled: boolean, time: string) => {
+      if (enabled) {
+        const granted = await requestPermission();
+        if (!granted) {
+          const status = await Notifications.getPermissionsAsync();
+          setNotifPermission(status.granted ? 'granted' : status.canAskAgain ? 'undetermined' : 'denied');
+          return; // stay disabled when permission was refused
+        }
+      }
+      settings.setDailyPalamEnabled(enabled);
+      settings.setDailyPalamTime(time);
+      await scheduleDailyPalam(enabled, time, settings.rasiPalamRasi);
+    },
+    [settings]
+  );
+
+  useEffect(() => {
+    // After the persisted store re-hydrates mid-session, keep the picker
+    // mode in sync with what was actually saved.
+    setRasiMode(settings.rasiPalamBirthStar !== null ? 'star' : 'rasi');
+  }, [settings.rasiPalamBirthStar]);
 
   const fontScaleOptions: { value: number; label: string }[] = [
     { value: fontScaleFactors.small, label: t('fontSmall') },
@@ -104,6 +134,83 @@ export default function SettingsScreen() {
             value={settings.numerals}
             onChange={settings.setNumerals}
           />
+        </ThemedView>
+
+        <SectionHeader title={t('rasiPalam')} />
+        <ThemedView variant="surface" style={styles.group}>
+          <SettingsOptionRow<'rasi' | 'star'>
+            label={t('rasiSelectMode')}
+            options={[
+              { value: 'rasi', label: t('byRasiName') },
+              { value: 'star', label: t('byBirthStar') },
+            ]}
+            value={rasiMode}
+            onChange={setRasiMode}
+          />
+          {rasiMode === 'rasi' ? (
+            <SettingsOptionRow<number>
+              label={t('selectYourRasi')}
+              options={RASI_NAMES.map((n, i) => ({ value: i, label: cleanBilingualValue(n, language) }))}
+              value={settings.rasiPalamRasi ?? -1}
+              onChange={settings.setRasi}
+            />
+          ) : (
+            <>
+              <SettingsOptionRow<number>
+                label={t('birthStar')}
+                options={NAKSHATRA_NAMES.map((n, i) => ({ value: i, label: cleanBilingualValue(n, language) }))}
+                value={settings.rasiPalamBirthStar ?? -1}
+                onChange={(star) => settings.setBirthStar(star, 1)}
+              />
+              {settings.rasiPalamBirthStar !== null &&
+              PADA_SPLIT_STAR_INDICES.includes(settings.rasiPalamBirthStar) ? (
+                <SettingsOptionRow<1 | 2 | 3 | 4>
+                  label={t('birthPada')}
+                  options={[
+                    { value: 1, label: '1' },
+                    { value: 2, label: '2' },
+                    { value: 3, label: '3' },
+                    { value: 4, label: '4' },
+                  ]}
+                  value={settings.rasiPalamBirthPada ?? 1}
+                  onChange={(p) => settings.setBirthStar(settings.rasiPalamBirthStar ?? 0, p)}
+                />
+              ) : null}
+              <TimeRow
+                label={t('janmaRasi')}
+                value={
+                  settings.rasiPalamRasi !== null
+                    ? cleanBilingualValue(RASI_NAMES[settings.rasiPalamRasi] ?? '', language)
+                    : null
+                }
+                language={language}
+              />
+            </>
+          )}
+          <SettingsToggleRow
+            label={t('dailyPalamNotification')}
+            value={settings.dailyPalamEnabled}
+            onChange={(enabled) => {
+              void applyDailyPalamSettings(enabled, settings.dailyPalamTime);
+            }}
+          />
+          {settings.dailyPalamEnabled ? (
+            <SettingsOptionRow<string>
+              label={t('dailyPalamTime')}
+              options={[
+                { value: '06:00', label: '06:00' },
+                { value: '06:30', label: '06:30' },
+                { value: '07:00', label: '07:00' },
+                { value: '07:30', label: '07:30' },
+                { value: '08:00', label: '08:00' },
+                { value: '09:00', label: '09:00' },
+              ]}
+              value={settings.dailyPalamTime}
+              onChange={(time) => {
+                void applyDailyPalamSettings(true, time);
+              }}
+            />
+          ) : null}
         </ThemedView>
 
         <SectionHeader title={t('calendar')} />
@@ -173,36 +280,6 @@ export default function SettingsScreen() {
         <ThemedView variant="surface" style={styles.group}>
           <TimeRow label={t('appVersion')} value={String(Constants.expoConfig?.version ?? '1.0.0')} language={language} />
           <TimeRow label={t('datasetVersion')} value={datasetVersion} language={language} />
-          <Pressable
-            onPress={() => Linking.openURL('https://github.com/thirunellai/docs/calendar-dataset.md')}
-            accessibilityRole="link"
-            accessibilityLabel={t('dataSource')}
-            style={styles.linkBtn2}
-          >
-            <ThemedText variant="body" color="primary">
-              {t('dataSource')} →
-            </ThemedText>
-          </Pressable>
-          <Pressable
-            onPress={() => Linking.openURL('https://thirunellai.app/privacy')}
-            accessibilityRole="link"
-            accessibilityLabel={t('privacyPolicy')}
-            style={styles.linkBtn2}
-          >
-            <ThemedText variant="body" color="primary">
-              {t('privacyPolicy')} →
-            </ThemedText>
-          </Pressable>
-          <Pressable
-            onPress={() => Linking.openURL('https://thirunellai.app/licenses')}
-            accessibilityRole="link"
-            accessibilityLabel={t('licenses')}
-            style={styles.linkBtn2}
-          >
-            <ThemedText variant="body" color="primary">
-              {t('licenses')} →
-            </ThemedText>
-          </Pressable>
         </ThemedView>
       </ScrollView>
     </SafeAreaView>
@@ -219,11 +296,6 @@ const styles = StyleSheet.create({
   linkBtn: {
     alignSelf: 'flex-start',
     minHeight: 36,
-    justifyContent: 'center',
-  },
-  linkBtn2: {
-    paddingVertical: 8,
-    minHeight: 40,
     justifyContent: 'center',
   },
 });

@@ -115,23 +115,34 @@ function CalendarCell({
                 marginTop: 2,
               }}
             />
-          ) : cell.isAmavasai || cell.isPournami ? (
-            <ThemedText
-              variant="caption"
-              tamil
+          ) : cell.isSubhaMuhurtham ? (
+            <View
               style={{
-                fontSize: 8,
-                lineHeight: 9,
+                width: 6,
+                height: 6,
+                borderRadius: 3,
+                borderWidth: 1.5,
+                borderColor: today ? theme.colors.textOnMaroon : theme.colors.gold,
                 marginTop: 2,
-                color: today
-                  ? theme.colors.gold
-                  : cell.isAmavasai
-                    ? theme.colors.textSecondary
-                    : theme.colors.primary,
               }}
-            >
-              {cell.isAmavasai ? '●' : '○'}
-            </ThemedText>
+            />
+          ) : cell.isAmavasai || cell.isPournami ? (
+            <View
+              pointerEvents="none"
+              style={{
+                width: 9,
+                height: 9,
+                borderRadius: 4.5,
+                marginTop: 2,
+                borderWidth: cell.isPournami ? 1.5 : 0,
+                borderColor: theme.colors.gold,
+                backgroundColor: cell.isAmavasai
+                  ? today
+                    ? theme.colors.textOnMaroon
+                    : theme.colors.text
+                  : 'transparent',
+              }}
+            />
           ) : cell.hasEvent ? (
             <View
               style={{

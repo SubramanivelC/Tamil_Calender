@@ -11,13 +11,14 @@ export default function TabsLayout() {
   const language = useSettingsStore((s) => s.language);
 
   const tabs: {
-    name: 'index' | 'calendar' | 'festivals' | 'search' | 'settings';
+    name: 'index' | 'calendar' | 'festivals' | 'search' | 'my-rasi' | 'settings';
     titleKey: string;
     icon: keyof typeof Ionicons.glyphMap;
     focusedIcon: keyof typeof Ionicons.glyphMap;
   }[] = [
     { name: 'index', titleKey: 'tabHome', icon: 'home-outline', focusedIcon: 'home' },
     { name: 'calendar', titleKey: 'tabCalendar', icon: 'calendar-outline', focusedIcon: 'calendar' },
+    { name: 'my-rasi', titleKey: 'tabMyRasi', icon: 'moon-outline', focusedIcon: 'moon' },
     { name: 'festivals', titleKey: 'tabFestivals', icon: 'star-outline', focusedIcon: 'star' },
     { name: 'search', titleKey: 'tabSearch', icon: 'search-outline', focusedIcon: 'search' },
     { name: 'settings', titleKey: 'tabSettings', icon: 'settings-outline', focusedIcon: 'settings' },

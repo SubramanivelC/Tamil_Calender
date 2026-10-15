@@ -56,13 +56,15 @@ export function AnnualCalendar({
         if (!map[month]) map[month] = new Set();
         map[month].add(f.dateKey);
       }
-      // Amavasai / Pournami moon markers per date.
+      // Amavasai / Pournami moon markers and Subha Muhurtham days per date.
       const decor = new Map<string, DayDecoration>();
       for (const o of obsRows) {
-        decor.set(o.date_key, {
-          isAmavasai: o.kind === 'amavasai',
-          isPournami: o.kind === 'pournami',
-        });
+        const entry = decor.get(o.date_key) ?? {};
+        entry.isAmavasai = (entry.isAmavasai ?? false) || o.kind === 'amavasai';
+        entry.isPournami = (entry.isPournami ?? false) || o.kind === 'pournami';
+        entry.isSubhaMuhurtham =
+          (entry.isSubhaMuhurtham ?? false) || o.kind === 'subha_muhurtham';
+        decor.set(o.date_key, entry);
       }
       if (!cancelled) {
         setFestivalByMonth(map);
@@ -112,15 +114,19 @@ export function AnnualCalendar({
         <ThemedText variant="caption" color="secondary">
           {t('amavasai')}
         </ThemedText>
-        <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: colors.textSecondary }} />
+        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.text }} />
         <ThemedText variant="caption" color="secondary">
           {t('pournami')}
         </ThemedText>
-        <View style={{ width: 5, height: 5, borderRadius: 2.5, borderWidth: 1, borderColor: colors.primary }} />
+        <View style={{ width: 6, height: 6, borderRadius: 3, borderWidth: 1.5, borderColor: colors.gold }} />
+        <View style={{ width: 6, height: 6, borderRadius: 3, borderWidth: 1.5, borderColor: colors.gold }} />
+        <ThemedText variant="caption" color="secondary">
+          {t('subhaMuhurtham')}
+        </ThemedText>
+        <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: colors.festival }} />
         <ThemedText variant="caption" color="secondary">
           {t('festival')}
         </ThemedText>
-        <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: colors.festival }} />
       </View>
       <View style={styles.gridWrap}>
         {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
@@ -141,6 +147,8 @@ export function AnnualCalendar({
               primary={colors.primary}
               festival={colors.festival}
               muted={colors.textSecondary}
+              gold={colors.gold}
+              text={colors.text}
             />
           </Card>
         ))}
@@ -157,6 +165,8 @@ export function MiniMonth({
   primary,
   festival,
   muted,
+  gold,
+  text,
 }: {
   cells: DayCell[];
   todayKey: string;
@@ -165,6 +175,8 @@ export function MiniMonth({
   primary: string;
   festival: string;
   muted: string;
+  gold: string;
+  text: string;
 }) {
   const rows: DayCell[][] = [];
   for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7));
@@ -212,7 +224,7 @@ export function MiniMonth({
               ) : cell.isAmavasai ? (
                 <View
                   style={{
-                    width: 5,
+                    width: 7,
                     height: 4,
                     justifyContent: 'center',
                     alignItems: 'center',
@@ -220,17 +232,17 @@ export function MiniMonth({
                 >
                   <View
                     style={{
-                      width: 5,
-                      height: 5,
-                      borderRadius: 2.5,
-                      backgroundColor: muted,
+                      width: 6,
+                      height: 6,
+                      borderRadius: 3,
+                      backgroundColor: text,
                     }}
                   />
                 </View>
               ) : cell.isPournami ? (
                 <View
                   style={{
-                    width: 5,
+                    width: 7,
                     height: 4,
                     justifyContent: 'center',
                     alignItems: 'center',
@@ -238,11 +250,23 @@ export function MiniMonth({
                 >
                   <View
                     style={{
-                      width: 4,
-                      height: 4,
-                      borderRadius: 2,
-                      borderWidth: 1,
-                      borderColor: primary,
+                      width: 6,
+                      height: 6,
+                      borderRadius: 3,
+                      borderWidth: 1.5,
+                      borderColor: gold,
+                    }}
+                  />
+                </View>
+              ) : cell.isSubhaMuhurtham ? (
+                <View style={{ width: 7, height: 4, justifyContent: 'center', alignItems: 'center' }}>
+                  <View
+                    style={{
+                      width: 5,
+                      height: 5,
+                      borderRadius: 2.5,
+                      borderWidth: 1.2,
+                      borderColor: gold,
                     }}
                   />
                 </View>
