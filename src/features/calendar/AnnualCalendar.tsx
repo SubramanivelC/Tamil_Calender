@@ -93,7 +93,9 @@ export function AnnualCalendar({
   const gridFor = (m: number) => grids[m - 1]?.cells ?? [];
 
   return (
-    <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxxl }}>
+    // Bottom clearance for the floating Monthly/Annual view toggle so the
+    // last month card is never covered at full scroll.
+    <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxxl + 56 }}>
       <View style={styles.yearHeader}>
         <Pressable onPress={onPrevYear} accessibilityRole="button" accessibilityLabel={t('previousYear')} hitSlop={8}>
           <ThemedText variant="h3" color="primary">

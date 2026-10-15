@@ -105,7 +105,9 @@ export default function CalendarScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
-      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxl }}>
+      {/* Bottom clearance: the floating Monthly/Annual toggle overlays the
+          scroll area, so pad past it to keep the last rows readable. */}
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxxl + 56 }}>
         <MonthSelector
           monthName={gregorianMonthName(month, language)}
           tamilMonthName={tamilMonthLine}
