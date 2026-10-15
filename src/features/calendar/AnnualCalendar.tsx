@@ -12,6 +12,7 @@ import { spacing } from '@/theme/spacing';
 import { parseDateKey } from '@/utils/dates';
 import type { DayCell } from '@/types';
 import { miniStyles } from './miniStyles';
+import { ThaliMark } from '@/components/calendar/ThaliMark';
 
 interface AnnualCalendarProps {
   year: number;
@@ -119,7 +120,7 @@ export function AnnualCalendar({
           {t('pournami')}
         </ThemedText>
         <View style={{ width: 6, height: 6, borderRadius: 3, borderWidth: 1.5, borderColor: colors.gold }} />
-        <View style={{ width: 6, height: 6, borderRadius: 3, borderWidth: 1.5, borderColor: colors.gold }} />
+        <ThaliMark color={colors.gold} size={10} />
         <ThemedText variant="caption" color="secondary">
           {t('subhaMuhurtham')}
         </ThemedText>
@@ -259,16 +260,8 @@ export function MiniMonth({
                   />
                 </View>
               ) : cell.isSubhaMuhurtham ? (
-                <View style={{ width: 7, height: 4, justifyContent: 'center', alignItems: 'center' }}>
-                  <View
-                    style={{
-                      width: 5,
-                      height: 5,
-                      borderRadius: 2.5,
-                      borderWidth: 1.2,
-                      borderColor: gold,
-                    }}
-                  />
+                <View style={{ width: 9, height: 10, justifyContent: 'flex-end', alignItems: 'center' }}>
+                  <ThaliMark color={gold} size={9} />
                 </View>
               ) : (
                 <View style={{ height: 4 }} />

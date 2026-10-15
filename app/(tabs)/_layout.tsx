@@ -57,6 +57,13 @@ export default function TabsLayout() {
           }}
         />
       ))}
+      {/* Day details renders INSIDE the tab navigator (hidden from the tab
+          bar) so the bottom menu stays visible on that screen. URL is still
+          /day-details because the (tabs) group is stripped. */}
+      <Tabs.Screen
+        name="day-details"
+        options={{ href: null }}
+      />
     </Tabs>
   );
 }

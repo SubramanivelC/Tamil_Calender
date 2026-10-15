@@ -6,6 +6,7 @@ import { weekdayName } from '@/localization';
 import { ThemedText } from '@/components/ThemedText';
 import type { DayCell, Language, NumeralStyle } from '@/types';
 import { formatNumerals } from '@/utils/numerals';
+import { ThaliMark } from '@/components/calendar/ThaliMark';
 import { spacing, minTouchTarget } from '@/theme/spacing';
 
 export interface CalendarGridProps {
@@ -116,16 +117,12 @@ function CalendarCell({
               }}
             />
           ) : cell.isSubhaMuhurtham ? (
-            <View
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: 3,
-                borderWidth: 1.5,
-                borderColor: today ? theme.colors.textOnMaroon : theme.colors.gold,
-                marginTop: 2,
-              }}
-            />
+            <View style={{ marginTop: 2 }} pointerEvents="none">
+              <ThaliMark
+                color={today ? theme.colors.textOnMaroon : theme.colors.gold}
+                size={8}
+              />
+            </View>
           ) : cell.isAmavasai || cell.isPournami ? (
             <View
               pointerEvents="none"

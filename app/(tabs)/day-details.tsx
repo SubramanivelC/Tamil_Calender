@@ -23,7 +23,9 @@ import type { UserEvent, ReminderDefinition } from '@/types';
 import { DEFAULT_REMINDER_HHMM } from '@/data/constants';
 import { spacing } from '@/theme/spacing';
 import { formatTimeWithMeridiem } from '@/utils/numerals';
-import { localTodayKey, isValidDateKey } from '@/utils/dates';
+import { localTodayKey, parseDateKey, isValidDateKey } from '@/utils/dates';
+import { gregorianMonthName } from '@/localization';
+import type { Language } from '@/types';
 
 export default function DayDetailsScreen() {
   const router = useRouter();
@@ -36,6 +38,7 @@ export default function DayDetailsScreen() {
   const t = useT();
   const { colors } = useThemeColors();
   const language = useSettingsStore((s) => s.language);
+  const isToday = dateKey === localTodayKey();
   const { data, loading, previousKey, nextKey } = useDayDetails(dateKey, language);
 
   const [noteText, setNoteText] = useState<string>('');
@@ -163,9 +166,30 @@ export default function DayDetailsScreen() {
             {t('previousDay')}
           </ThemedText>
         </Pressable>
-        <ThemedText variant="caption" color="secondary" style={styles.dayNavDate}>
-          {data.gregorianLabel}
-        </ThemedText>
+        <View style={styles.dayNavCenter}>
+          <ThemedText variant="caption" color="secondary" style={styles.dayNavDate}>
+            {data.gregorianLabel}
+          </ThemedText>
+          <Pressable
+            disabled={isToday}
+            onPress={() => router.setParams({ date: localTodayKey() })}
+            accessibilityRole="button"
+            accessibilityLabel={t('jumpToToday')}
+            accessibilityState={{ disabled: isToday }}
+            style={[
+              styles.dayNavTodayBtn,
+              isToday && styles.dayNavTodayBtnActive,
+            ]}
+          >
+            <ThemedText
+              variant="small"
+              weight="medium"
+              color={isToday ? 'secondary' : 'primary'}
+            >
+              {t('jumpToToday')}
+            </ThemedText>
+          </Pressable>
+        </View>
         <Pressable
           onPress={() => router.setParams({ date: nextKey })}
           accessibilityRole="button"
@@ -192,7 +216,7 @@ export default function DayDetailsScreen() {
               {t('gregorianDate')}:
             </ThemedText>
             <ThemedText variant="body" style={styles.metaRowValue}>
-              {data.gregorianLabel}
+              {elaboratedGregorian(dateKey, language)}
             </ThemedText>
           </View>
           <View style={styles.metaRow}>
@@ -353,6 +377,13 @@ export default function DayDetailsScreen() {
   );
 }
 
+/** Elaborated `15 October 2026` (localized month name) instead of the
+ *  weekday-prefixed label used in the top nav. */
+function elaboratedGregorian(key: string, language: string): string {
+  const { year, month, day } = parseDateKey(key);
+  return `${day} ${gregorianMonthName(month, language as Language)} ${year}`;
+}
+
 const styles = StyleSheet.create({
   topBar: {
     flexDirection: 'row',
@@ -411,7 +442,22 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   dayNavDate: {
-    flex: 1,
     textAlign: 'center',
+  },
+  dayNavCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+  },
+  dayNavTodayBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 999,
+    minHeight: 26,
+    justifyContent: 'center',
+  },
+  dayNavTodayBtnActive: {
+    opacity: 0.5,
   },
 });
