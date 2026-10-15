@@ -185,7 +185,11 @@ export async function getObservancesForDate(dateKey: string): Promise<Observance
     `SELECT date_key, kind, name_ta, name_en FROM observances WHERE date_key = ?`,
     dateKey
   );
-  return mergeWithComputed(rows, parseDateKey(dateKey).year);
+  // The year overlay computes the WHOLE year's rows; for an exact-date query
+  // only rows matching dateKey may leave this function (bug fixed: previously
+  // every date of the year leaked into single-day festival lists).
+  const merged = mergeWithComputed(rows, parseDateKey(dateKey).year);
+  return merged.filter((r) => r.date_key === dateKey);
 }
 
 export async function getObservancesForMonth(year: number, month: number): Promise<ObservanceRow[]> {

@@ -163,6 +163,9 @@ export default function DayDetailsScreen() {
             {t('previousDay')}
           </ThemedText>
         </Pressable>
+        <ThemedText variant="caption" color="secondary" style={styles.dayNavDate}>
+          {data.gregorianLabel}
+        </ThemedText>
         <Pressable
           onPress={() => router.setParams({ date: nextKey })}
           accessibilityRole="button"
@@ -184,9 +187,14 @@ export default function DayDetailsScreen() {
           <ThemedText variant="h2" weight="bold" style={{ marginTop: 4 }}>
             {data.weekdayLabel}
           </ThemedText>
-          <ThemedText variant="body" style={{ marginTop: 6 }}>
-            {data.gregorianLabel}
-          </ThemedText>
+          <View style={styles.metaRow}>
+            <ThemedText variant="body" color="secondary" style={styles.metaRowKey}>
+              {t('gregorianDate')}:
+            </ThemedText>
+            <ThemedText variant="body" style={styles.metaRowValue}>
+              {data.gregorianLabel}
+            </ThemedText>
+          </View>
           <View style={styles.metaRow}>
             <ThemedText variant="body" color="secondary" style={styles.metaRowKey}>
               {t('tamilDate')}:
@@ -197,14 +205,6 @@ export default function DayDetailsScreen() {
                 : `${t('dataUnavailableTitle')}`}
             </ThemedText>
           </View>
-          {cleanedPaksha ? (
-            <View style={styles.metaRow}>
-              <ThemedText variant="body" color="secondary" style={styles.metaRowKey}>
-                {t('paksha')}:
-              </ThemedText>
-              <ThemedText variant="body" style={styles.metaRowValue}>{cleanedPaksha}</ThemedText>
-            </View>
-          ) : null}
         </Card>
 
         {/* Panchangam — sunrise/sunset first, then the Daivika/adi-daivika
@@ -226,6 +226,9 @@ export default function DayDetailsScreen() {
           <TimeRow label={t('parikaram')} value={data.panchangam.record.parikaram} language={language} />
           <TimeRow label={t('moonrise')} value={data.panchangam.record.moonrise} language={language} />
           <TimeRow label={t('moonset')} value={data.panchangam.record.moonset} language={language} />
+          {cleanedPaksha ? (
+            <TimeRow label={t('paksha')} value={cleanedPaksha} language={language} />
+          ) : null}
         </Card>
 
         {/* Festivals & observances */}
@@ -406,5 +409,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
+  },
+  dayNavDate: {
+    flex: 1,
+    textAlign: 'center',
   },
 });
