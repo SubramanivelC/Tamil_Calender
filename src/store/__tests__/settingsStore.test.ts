@@ -1,8 +1,8 @@
 import { useSettingsStore } from '../settingsStore';
 
 beforeEach(() => {
+  // Note: themeMode is NOT pre-set so the store default ('light') is exercised.
   useSettingsStore.setState({
-    themeMode: 'system',
     fontScale: 1,
     language: 'ta',
     numerals: 'arabic',
@@ -16,7 +16,7 @@ beforeEach(() => {
 describe('settings store', () => {
   test('defaults are sane', () => {
     const s = useSettingsStore.getState();
-    expect(s.themeMode).toBe('system');
+    expect(s.themeMode).toBe('light');
     expect(s.language).toBe('ta');
     expect(s.firstDayOfWeek).toBe(0);
   });

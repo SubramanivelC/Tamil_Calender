@@ -42,7 +42,8 @@ export interface SettingsState {
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
-      themeMode: 'system',
+      // Default to the light (white) theme instead of following the OS.
+      themeMode: 'light',
       fontScale: 1,
       language: 'ta',
       numerals: 'arabic',
