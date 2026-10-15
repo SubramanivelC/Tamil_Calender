@@ -7,6 +7,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView, Card } from '@/components/ThemedView';
 import { CalendarGrid } from '@/components/calendar/CalendarGrid';
 import { MonthSelector } from '@/components/calendar/MonthSelector';
+import { MonthDetails } from '@/components/calendar/MonthDetails';
 import { buildMonthGrid } from '@/components/calendar/monthGrid';
 import { useMonthDecorations } from '@/features/calendar/useMonthDecorations';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -36,6 +37,11 @@ export default function CalendarScreen() {
   const [year, setYear] = useState(todayParts.year);
   const [month, setMonth] = useState(todayParts.month);
   const [grid, setGrid] = useState<import('@/types').DayCell[]>([]);
+  const [refreshSignal, setRefreshSignal] = useState(0);
+  useFocusEffect(
+    // Re-read month details when returning (e.g. after adding an event).
+    useCallback(() => setRefreshSignal((s) => s + 1), [])
+  );
   const [previousMonthLabel, setPreviousMonthLabel] = useState('');
   const [nextYearLabel] = useState('');
 
@@ -127,6 +133,12 @@ export default function CalendarScreen() {
             onSelectDate={(key) => router.push({ pathname: '/day-details', params: { date: key } })}
           />
         </Card>
+        <MonthDetails
+          year={year}
+          month={month}
+          refreshSignal={refreshSignal}
+          onSelectDate={(key) => router.push({ pathname: '/day-details', params: { date: key } })}
+        />
         <View style={styles.legendRow}>
           <ThemedText variant="caption" color="secondary">
             {t('amavasai')}

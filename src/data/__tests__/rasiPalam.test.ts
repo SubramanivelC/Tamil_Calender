@@ -4,6 +4,9 @@ import {
   rasiIndexForStar,
   palamCategoryForTransit,
   computeDailyPalam,
+  computeDailyPalamForAllRasis,
+  janmaRasiFromBirth,
+  moonRasiIndexAtJd,
   julianDayAtSunrise,
 } from '../rasiPalam';
 import { toSidereal, sunMoonLongitudesAtJd } from '@/services/panchangamAstro';
@@ -127,6 +130,61 @@ describe('computeDailyPalam', () => {
       expect(p.headline).toBeTruthy();
       expect(p.palam).toContain('/');
     }
+  });
+});
+
+describe('janmaRasiFromBirth (janma rasi finder from date of birth + time)', () => {
+  test('anchor: born on the Jan 19 2026 amavasai sunrise → Makaram (index 9)', () => {
+    // The engine-verified anchor: sun and moon both sit in Makaram at that
+    // sunrise, so a birth then must return janma rasi Makaram.
+    expect(janmaRasiFromBirth(2026, 1, 19, '06:00')).toBe(9);
+  });
+
+  test('matches moonRasiIndexAtJd for any instant of the day', () => {
+    const jd = julianDayAtSunrise(2026, 6, 15, '05:42');
+    expect(janmaRasiFromBirth(2026, 6, 15, '06:00')).toBe(moonRasiIndexAtJd(jd));
+  });
+
+  test('later in the day can cross into the next rasi near a boundary', () => {
+    // Whole-day sampling must only ever produce valid rasi indices.
+    for (let h = 0; h < 24; h++) {
+      const r = janmaRasiFromBirth(1990, 5, 21, `${String(h).padStart(2, '0')}:30`);
+      expect(r).toBeGreaterThanOrEqual(0);
+      expect(r).toBeLessThanOrEqual(11);
+    }
+  });
+
+  test('round-trip: the found rasi equals the star+pada derivation at that instant', () => {
+    // Independent cross-check: derive the star AND its pada from the same
+    // sidereal moon longitude, then the mapping must return the same rasi.
+    const jd = julianDayAtSunrise(1988, 9, 2, '06:15');
+    const sid = toSidereal(sunMoonLongitudesAtJd(jd), jd);
+    const starWidth = 360 / 27;
+    const starIdx = Math.min(Math.floor(sid.moonSidereal / starWidth), 26);
+    const pada = Math.min(4, Math.max(1, Math.floor((sid.moonSidereal - starIdx * starWidth) / (starWidth / 4)) + 1)) as 1 | 2 | 3 | 4;
+    expect(janmaRasiFromBirth(1988, 9, 2, '06:15')).toBe(rasiIndexForStar(starIdx, pada));
+  });
+});
+
+describe('computeDailyPalamForAllRasis (all 12 rasis per day)', () => {
+  const sunriseJD = julianDayAtSunrise(2026, 1, 19, '06:00');
+
+  test('returns 12 rows whose transits cover 1..12 exactly', () => {
+    const rows = computeDailyPalamForAllRasis(sunriseJD, 19);
+    expect(rows).toHaveLength(12);
+    expect(new Set(rows.map((r) => r.transit)).size).toBe(12);
+  });
+
+  test('row i equals computeDailyPalam for janma rasi i', () => {
+    const rows = computeDailyPalamForAllRasis(sunriseJD, 19);
+    for (let rasi = 0; rasi < 12; rasi++) {
+      expect(rows[rasi]).toEqual(computeDailyPalam(sunriseJD, rasi, 19));
+    }
+  });
+
+  test('exactly one rasi is at Chandrashtama each day (the 8th from the moon)', () => {
+    const rows = computeDailyPalamForAllRasis(sunriseJD, 19);
+    expect(rows.filter((r) => r.category === 'chandrashtama')).toHaveLength(1);
   });
 });
 

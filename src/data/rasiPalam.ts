@@ -266,3 +266,36 @@ export function julianDayAtSunrise(year: number, month: number, day: number, sun
   const utcMinutes = localMinutes - 330; // IST = UTC +5:30
   return julianDay(year, month, day, utcMinutes / (24 * 60));
 }
+
+// ---------------------------------------------------------------------------
+// Birth-based janma rasi finder + all-rasis palam
+// ---------------------------------------------------------------------------
+
+/**
+ * Janma rasi from date of birth + birth time (Tamil Nadu convention:
+ * birth time in IST / Hindu calendar time). Sidereal moon sign at the
+ * birth instant, computed by the same Meeus-anchored engine as the
+ * panchangam (±~7 min residual near a rasi boundary).
+ */
+export function janmaRasiFromBirth(
+  year: number,
+  month: number,
+  day: number,
+  timeHHmm: string
+): number {
+  const [hStr, mStr] = timeHHmm.split(':');
+  const h = Number(hStr) || 0;
+  const m = Number(mStr) || 0;
+  const utcMinutes = h * 60 + m - 330; // IST = UTC +5:30
+  const jd = julianDay(year, month, day, utcMinutes / (24 * 60));
+  return moonRasiIndexAtJd(jd);
+}
+
+/**
+ * Today's palam for ALL 12 janma rasis (moon transits each rasi once per
+ * month, so today yields exactly one transit 1..12 per rasi). Row i is
+ * rasi i's own forecast — identical to computeDailyPalam(rasi=i).
+ */
+export function computeDailyPalamForAllRasis(jdSunrise: number, dayOfYear: number): DailyPalam[] {
+  return RASI_NAMES.map((_, rasi) => computeDailyPalam(jdSunrise, rasi, dayOfYear));
+}

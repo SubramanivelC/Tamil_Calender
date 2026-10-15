@@ -17,6 +17,7 @@ import {
   nakshatraName,
   yogaName,
   karanaName,
+  lunarFieldsAtJd,
   norm360,
   ayanamsaLahiri,
 } from '../panchangamAstro';
@@ -158,5 +159,87 @@ describe('panchangam astro (sidereal ephemeris)', () => {
     expect(tithiIndex(359.9)).toBe(29);
     expect(tithiIndex(168)).toBe(14);
     expect(tithiIndex(192)).toBe(16);
+  });
+
+  /**
+   * Drik Panchang Chennai (geoname 1264527) sunrise anchors, pulled and
+   * cross-checked in Oct 2026. The engine evaluates at local sunrise; 06:00
+   * IST is within minutes of the Chennai 2026 sunrise times, and every
+   * anchor value holds until well after 06:00 per Drik's own "until" times.
+   */
+  function fieldsOn(dateKey: string) {
+    const [y, m, d] = dateKey.split('-').map(Number);
+    const jd = julianDay(y ?? 0, m ?? 1, d ?? 1, (6 * 60 - 330) / 1440);
+    return lunarFieldsAtJd(jd);
+  }
+
+  test('2026-10-14 sunrise: Shukla Chaturthi / Anuradha / Ayushman / Vanija', () => {
+    const f = fieldsOn('2026-10-14');
+    expect(f.tithi).toBe('வளர்பிறை / Shukla சதுர்த்தி / Chathurthi');
+    expect(f.nakshatra).toBe('அனுஷம் / Anuradha');
+    expect(f.yoga).toBe('ஆயுஷ்மான் / Ayushman');
+    expect(f.karana).toBe('வணிஜம் / Vanija');
+  });
+
+  test('2026-10-19 sunrise: Shukla Ashtami / Uttarashada / Dhriti / Bava', () => {
+    const f = fieldsOn('2026-10-19');
+    expect(f.tithi).toBe('வளர்பிறை / Shukla அஷ்டமி / Ashtami');
+    expect(f.nakshatra).toBe('உத்திராடம் / Uttarashada');
+    expect(f.yoga).toBe('த்ருதி / Dhriti');
+    expect(f.karana).toBe('பவம் / Bava');
+  });
+
+  test('2026-11-08 (Tamil Deepavali) sunrise: Krishna Chaturdasi / Swati / Shakuni', () => {
+    const f = fieldsOn('2026-11-08');
+    expect(f.tithi).toBe('தேய்பிறை / Krishna சதுர்த்தசி / Chaturdasi');
+    expect(f.nakshatra).toBe('சுவாதி / Swati');
+    expect(f.karana).toBe('சகுணி / Shakuni');
+  });
+
+  /** The full 60-karana lunar-month cycle, pinned end to end. */
+  test('karana cycle: Kimstughna first, 8 movable repeats, 3 fixed at the end', () => {
+    const at = (i: number) => karanaName(i * 6 + 0.5); // centre of half-tithi i (0..59)
+    expect(at(0)).toContain('Kimstughna');
+    const movable = ['Bava', 'Balava', 'Kaulava', 'Taitila', 'Gara', 'Vanija', 'Vishti'];
+    for (let i = 0; i < 8; i++) {
+      for (let j = 0; j < 7; j++) {
+        expect(at(1 + i * 7 + j)).toContain(movable[j] ?? '');
+      }
+    }
+    expect(at(57)).toContain('Shakuni');
+    expect(at(58)).toContain('Chatushpada');
+    expect(at(59)).toContain('Naga');
+    // Cycle identity across lunations: karana k+60 == karana k.
+    expect(karanaName(6.5)).toBe(at(1));
+    expect(karanaName(366.5)).toBe(at(1));
+  });
+
+  test('nakshatra cycle covers all 27 in order and wraps at 360', () => {
+    const names = [
+      'Ashwini', 'Bharani', 'Krittika', 'Rohini', 'Mrigashira', 'Ardra',
+      'Punarvasu', 'Pushya', 'Ashlesha', 'Magha', 'Purva Phalguni',
+      'Uttara Phalguni', 'Hasta', 'Chitra', 'Swati', 'Vishakha', 'Anuradha',
+      'Jyeshta', 'Moolam', 'Purvashada', 'Uttarashada', 'Shravana',
+      'Dhanishta', 'Shatabhisha', 'Purvabhadra', 'Uttarabhadra', 'Revati',
+    ];
+    for (let i = 0; i < 27; i++) {
+      expect(nakshatraName(i * (360 / 27) + (360 / 27) / 2).endsWith(names[i] ?? '')).toBe(true);
+    }
+    expect(nakshatraName(359.9).endsWith('Revati')).toBe(true);
+  });
+
+  test('yoga cycle covers all 27 in order and wraps at 360', () => {
+    const names = [
+      'Vishkambha', 'Priti', 'Ayushman', 'Saubhagya', 'Shobhana', 'Atiganda',
+      'Sukarma', 'Dhriti', 'Shula', 'Ganda', 'Vriddhi', 'Dhruva', 'Vyaghata',
+      'Harshana', 'Vajra', 'Siddhi', 'Vyatipata', 'Variyana', 'Parigha',
+      'Shiva', 'Siddha', 'Sadhya', 'Shubha', 'Shukla', 'Brahma', 'Indra',
+      'Vaidhriti',
+    ];
+    for (let i = 0; i < 27; i++) {
+      // sun+moon sum centred in yoga band i (moon fixed at 0 → sum = sun).
+      expect(yogaName(i * (360 / 27) + (360 / 27) / 2, 0).endsWith(names[i] ?? '')).toBe(true);
+    }
+    expect(yogaName(359, 0).endsWith('Vaidhriti')).toBe(true);
   });
 });

@@ -11,5 +11,5 @@ import { scheduleDailyPalam } from '@/services/notificationService';
 export async function initializeAppData(): Promise<void> {
   await getDatabase();
   const s = useSettingsStore.getState();
-  await scheduleDailyPalam(s.dailyPalamEnabled, s.dailyPalamTime);
+  await scheduleDailyPalam(s.dailyPalamEnabled, s.dailyPalamTime, s.rasiPalamRasi);
 }

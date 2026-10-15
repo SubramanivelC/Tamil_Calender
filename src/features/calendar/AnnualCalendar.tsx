@@ -56,13 +56,15 @@ export function AnnualCalendar({
         if (!map[month]) map[month] = new Set();
         map[month].add(f.dateKey);
       }
-      // Amavasai / Pournami moon markers per date.
+      // Amavasai / Pournami moon markers and Subha Muhurtham days per date.
       const decor = new Map<string, DayDecoration>();
       for (const o of obsRows) {
-        decor.set(o.date_key, {
-          isAmavasai: o.kind === 'amavasai',
-          isPournami: o.kind === 'pournami',
-        });
+        const entry = decor.get(o.date_key) ?? {};
+        entry.isAmavasai = (entry.isAmavasai ?? false) || o.kind === 'amavasai';
+        entry.isPournami = (entry.isPournami ?? false) || o.kind === 'pournami';
+        entry.isSubhaMuhurtham =
+          (entry.isSubhaMuhurtham ?? false) || o.kind === 'subha_muhurtham';
+        decor.set(o.date_key, entry);
       }
       if (!cancelled) {
         setFestivalByMonth(map);
@@ -117,10 +119,14 @@ export function AnnualCalendar({
           {t('pournami')}
         </ThemedText>
         <View style={{ width: 6, height: 6, borderRadius: 3, borderWidth: 1.5, borderColor: colors.gold }} />
+        <View style={{ width: 6, height: 6, borderRadius: 3, borderWidth: 1.5, borderColor: colors.gold }} />
+        <ThemedText variant="caption" color="secondary">
+          {t('subhaMuhurtham')}
+        </ThemedText>
+        <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: colors.festival }} />
         <ThemedText variant="caption" color="secondary">
           {t('festival')}
         </ThemedText>
-        <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: colors.festival }} />
       </View>
       <View style={styles.gridWrap}>
         {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
@@ -248,6 +254,18 @@ export function MiniMonth({
                       height: 6,
                       borderRadius: 3,
                       borderWidth: 1.5,
+                      borderColor: gold,
+                    }}
+                  />
+                </View>
+              ) : cell.isSubhaMuhurtham ? (
+                <View style={{ width: 7, height: 4, justifyContent: 'center', alignItems: 'center' }}>
+                  <View
+                    style={{
+                      width: 5,
+                      height: 5,
+                      borderRadius: 2.5,
+                      borderWidth: 1.2,
                       borderColor: gold,
                     }}
                   />

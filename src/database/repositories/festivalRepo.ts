@@ -2,6 +2,13 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 import { getDatabase } from '../client';
 import type { FestivalCategory, FestivalOccurrence, UpcomingFestival } from '@/types';
 import { parseDateKey, toDateKey, addDays, localTodayKey } from '@/utils/dates';
+import {
+  amPournaForRange,
+  tithiBandDatesForRange,
+  PRADOSHAM_CENTERS,
+  EKADASI_CENTERS,
+} from '@/data/lunarPhases';
+import { NAVIGABLE_START_YEAR, NAVIGABLE_END_YEAR } from '@/data/constants';
 
 export interface RawOccurrenceRow {
   id: number;
@@ -117,27 +124,87 @@ export interface ObservanceRow {
   name_en: string;
 }
 
+/**
+ * Engine-computed lunar observances for any Gregorian year (1900–2100).
+ *
+ * The bundled dataset only seeds observance rows for its coverage window
+ * (see src/data/lunarPhases.ts, which shares the generator rules); this
+ * overlay computes the same dates on demand for every other navigable year
+ * so amavasai/pournami/pradosham/ekadasi markers never vanish.
+ * Same algorithm as the seeder ⇒ values agree inside the dataset window and
+ * the merge below de-duplicates, preferring DB rows.
+ */
+const OBSERVANCE_LABELS: Pick<ObservanceRow, 'kind' | 'name_ta' | 'name_en'>[] = [
+  { kind: 'amavasai', name_ta: 'அமாவாசை', name_en: 'Amavasai' },
+  { kind: 'pournami', name_ta: 'பௌர்ணமி', name_en: 'Pournami' },
+  { kind: 'pradosham', name_ta: 'பிரதோஷம்', name_en: 'Pradosham' },
+  { kind: 'ekadasi', name_ta: 'ஏகாதசி', name_en: 'Ekadasi' },
+];
+
+const computedYearCache = new Map<number, ObservanceRow[]>();
+
+function computedObservancesForYear(year: number): ObservanceRow[] {
+  if (year < NAVIGABLE_START_YEAR || year > NAVIGABLE_END_YEAR) return [];
+  const cached = computedYearCache.get(year);
+  if (cached) return cached;
+  const rows: ObservanceRow[] = [];
+  for (const rec of amPournaForRange(year, year)) {
+    const label = OBSERVANCE_LABELS.find((l) => l.kind === rec.kind);
+    if (!label) continue;
+    rows.push({ date_key: rec.dateKey, ...label });
+  }
+  const bandKinds: { centers: number[]; kind: 'pradosham' | 'ekadasi' }[] = [
+    { centers: PRADOSHAM_CENTERS, kind: 'pradosham' },
+    { centers: EKADASI_CENTERS, kind: 'ekadasi' },
+  ];
+  for (const { centers, kind } of bandKinds) {
+    const label = OBSERVANCE_LABELS.find((l) => l.kind === kind);
+    if (!label) continue;
+    for (const d of tithiBandDatesForRange(centers, year, year)) {
+      rows.push({ date_key: d, ...label });
+    }
+  }
+  rows.sort((a, b) => a.date_key.localeCompare(b.date_key));
+  computedYearCache.set(year, rows);
+  return rows;
+}
+
+/** DB rows are authoritative; computed rows only fill gaps (ordered by date). */
+function mergeWithComputed(dbRows: ObservanceRow[], year: number): ObservanceRow[] {
+  const seen = new Set(dbRows.map((r) => `${r.date_key}|${r.kind}`));
+  const extras = computedObservancesForYear(year).filter(
+    (r) => !seen.has(`${r.date_key}|${r.kind}`)
+  );
+  if (extras.length === 0) return dbRows;
+  return [...dbRows, ...extras].sort((a, b) => a.date_key.localeCompare(b.date_key));
+}
+
 export async function getObservancesForDate(dateKey: string): Promise<ObservanceRow[]> {
   const db = await getDatabase();
-  return db.getAllAsync<ObservanceRow>(
+  const rows = await db.getAllAsync<ObservanceRow>(
     `SELECT date_key, kind, name_ta, name_en FROM observances WHERE date_key = ?`,
     dateKey
   );
+  return mergeWithComputed(rows, parseDateKey(dateKey).year);
 }
 
 export async function getObservancesForMonth(year: number, month: number): Promise<ObservanceRow[]> {
   const db = await getDatabase();
   const prefix = `${year}-${String(month).padStart(2, '0')}-%`;
-  return db.getAllAsync<ObservanceRow>(
+  const rows = await db.getAllAsync<ObservanceRow>(
     `SELECT date_key, kind, name_ta, name_en FROM observances WHERE date_key LIKE ? ORDER BY date_key`,
     prefix
+  );
+  return mergeWithComputed(rows, year).filter(
+    (r) => r.date_key.startsWith(prefix.slice(0, 8))
   );
 }
 
 export async function getObservancesForYear(year: number): Promise<ObservanceRow[]> {
   const db = await getDatabase();
-  return db.getAllAsync<ObservanceRow>(
+  const rows = await db.getAllAsync<ObservanceRow>(
     `SELECT date_key, kind, name_ta, name_en FROM observances WHERE date_key LIKE ? ORDER BY date_key`,
     `${year}-%`
   );
+  return mergeWithComputed(rows, year);
 }

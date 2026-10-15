@@ -7,6 +7,10 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import type { ReminderDefinition } from '@/types';
 import { parseDateKey } from '@/utils/dates';
+import { RASI_NAMES } from '@/data/rasiPalam';
+
+/** Short rasi label for notification titles ('மேஷம் / Mesham'). */
+const RASI_LABELS: string[] = RASI_NAMES.map((n) => n.replace(/ \(.*\)$/, ''));
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -137,8 +141,13 @@ function dailyPalamTrigger(time: string): Notifications.CalendarTriggerInput | n
 /**
  * Schedule (or cancel per `enabled`) the daily rasi palam notification.
  * Idempotent: cancels the stable identifier first when one exists.
+ * `rasiIndex` (0..11) personalizes the title with the user's moon sign.
  */
-export async function scheduleDailyPalam(enabled: boolean, time: string): Promise<boolean> {
+export async function scheduleDailyPalam(
+  enabled: boolean,
+  time: string,
+  rasiIndex?: number | null
+): Promise<boolean> {
   try {
     const existing = await Notifications.getAllScheduledNotificationsAsync();
     if (existing.some((n) => n.identifier === DAILY_PALAM_NOTIFICATION_ID)) {
@@ -148,10 +157,14 @@ export async function scheduleDailyPalam(enabled: boolean, time: string): Promis
     await ensureAndroidChannel();
     const trigger = dailyPalamTrigger(time);
     if (!trigger) return false;
+    const cleanIndex = typeof rasiIndex === 'number' && rasiIndex >= 0 && rasiIndex <= 11 ? rasiIndex : null;
+    const rasiName = cleanIndex !== null ? RASI_LABELS[cleanIndex] ?? '' : '';
     await Notifications.scheduleNotificationAsync({
       identifier: DAILY_PALAM_NOTIFICATION_ID,
       content: {
-        title: 'ராசி பலம் / Rasi palam',
+        title: rasiName
+          ? `ராசி பலம் — ${rasiName} / Rasi palam — ${rasiName}`
+          : 'ராசி பலம் / Rasi palam',
         body: 'இன்றைய சந்திரகோச்சாரப் பலன் தயார் — திறந்து பாருங்கள் / Today\'s daily palam is ready — open the app.',
         sound: 'default',
       },

@@ -73,9 +73,16 @@ export function useMonthDecorations(year: number, month: number): MonthDecoratio
             tamilMonth: td?.month ?? null,
             isAmavasai: obs.some((o) => o.kind === 'amavasai'),
             isPournami: obs.some((o) => o.kind === 'pournami'),
+            isSubhaMuhurtham: obs.some((o) => o.kind === 'subha_muhurtham'),
             hasEvent,
           };
-          if (decor.tamilDay !== null || decor.isAmavasai || decor.isPournami || decor.hasEvent) {
+          if (
+            decor.tamilDay !== null ||
+            decor.isAmavasai ||
+            decor.isPournami ||
+            decor.isSubhaMuhurtham ||
+            decor.hasEvent
+          ) {
             result.set(key, decor);
           }
         }

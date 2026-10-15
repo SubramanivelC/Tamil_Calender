@@ -26,6 +26,8 @@ export interface DayCell {
   hasFestival: boolean;
   isAmavasai: boolean;
   isPournami: boolean;
+  /** Published Subha Muhurtham (auspicious-date) marker. */
+  isSubhaMuhurtham?: boolean;
   /** Has at least one user-created event on this date. */
   hasEvent?: boolean;
 }
@@ -63,6 +65,10 @@ export interface PanchangamRecord extends PanchangTimings {
   yoga: string | null;
   karana: string | null;
   paksha: string | null;
+  /** Vaara Soolam direction ('மேற்கு / West') — weekday-derived, always set. */
+  soolam: string;
+  /** Parigaram for the day's soolam ('வெல்லம் / Jaggery'). */
+  parikaram: string;
 }
 
 export interface FestivalOccurrence {

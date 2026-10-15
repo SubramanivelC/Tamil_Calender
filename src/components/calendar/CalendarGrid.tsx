@@ -115,6 +115,17 @@ function CalendarCell({
                 marginTop: 2,
               }}
             />
+          ) : cell.isSubhaMuhurtham ? (
+            <View
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: 3,
+                borderWidth: 1.5,
+                borderColor: today ? theme.colors.textOnMaroon : theme.colors.gold,
+                marginTop: 2,
+              }}
+            />
           ) : cell.isAmavasai || cell.isPournami ? (
             <View
               pointerEvents="none"

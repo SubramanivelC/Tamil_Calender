@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { ScrollView, View, Linking, Pressable, StyleSheet } from 'react-native';
+import { ScrollView, View, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
@@ -69,7 +69,7 @@ export default function SettingsScreen() {
       }
       settings.setDailyPalamEnabled(enabled);
       settings.setDailyPalamTime(time);
-      await scheduleDailyPalam(enabled, time);
+      await scheduleDailyPalam(enabled, time, settings.rasiPalamRasi);
     },
     [settings]
   );
@@ -280,36 +280,6 @@ export default function SettingsScreen() {
         <ThemedView variant="surface" style={styles.group}>
           <TimeRow label={t('appVersion')} value={String(Constants.expoConfig?.version ?? '1.0.0')} language={language} />
           <TimeRow label={t('datasetVersion')} value={datasetVersion} language={language} />
-          <Pressable
-            onPress={() => Linking.openURL('https://github.com/thirunellai/docs/calendar-dataset.md')}
-            accessibilityRole="link"
-            accessibilityLabel={t('dataSource')}
-            style={styles.linkBtn2}
-          >
-            <ThemedText variant="body" color="primary">
-              {t('dataSource')} →
-            </ThemedText>
-          </Pressable>
-          <Pressable
-            onPress={() => Linking.openURL('https://thirunellai.app/privacy')}
-            accessibilityRole="link"
-            accessibilityLabel={t('privacyPolicy')}
-            style={styles.linkBtn2}
-          >
-            <ThemedText variant="body" color="primary">
-              {t('privacyPolicy')} →
-            </ThemedText>
-          </Pressable>
-          <Pressable
-            onPress={() => Linking.openURL('https://thirunellai.app/licenses')}
-            accessibilityRole="link"
-            accessibilityLabel={t('licenses')}
-            style={styles.linkBtn2}
-          >
-            <ThemedText variant="body" color="primary">
-              {t('licenses')} →
-            </ThemedText>
-          </Pressable>
         </ThemedView>
       </ScrollView>
     </SafeAreaView>
@@ -326,11 +296,6 @@ const styles = StyleSheet.create({
   linkBtn: {
     alignSelf: 'flex-start',
     minHeight: 36,
-    justifyContent: 'center',
-  },
-  linkBtn2: {
-    paddingVertical: 8,
-    minHeight: 40,
     justifyContent: 'center',
   },
 });

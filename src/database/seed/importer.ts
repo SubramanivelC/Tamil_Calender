@@ -9,6 +9,7 @@ import {
   SEED_FESTIVALS,
   PRADOSHAM_DATES,
   EKADASI_DATES,
+  SUBHA_MUHURTHAM_DATES,
   approxSunriseSunset,
 } from '@/data/seedData';
 import { computeInauspiciousTimings } from '@/services/panchangamService';
@@ -40,7 +41,7 @@ async function importTemplates(db: SQLiteDatabase): Promise<void> {
   // The engine-derived lunar tables replaced copy-typed ones in dataset
   // 2026.10-subset.2; sweep stale rows so shifted dates can't survive.
   await db.runAsync(
-    `DELETE FROM observances WHERE kind IN ('amavasai', 'pournami', 'pradosham', 'ekadasi')`
+    `DELETE FROM observances WHERE kind IN ('amavasai', 'pournami', 'pradosham', 'ekadasi', 'subha_muhurtham')`
   );
   // Amavasai/Pournami verified rows -> observances + approximate panchangam
   for (const rec of AM_POURNA_RECORDS) {
@@ -104,6 +105,12 @@ async function importObservances(db: SQLiteDatabase): Promise<void> {
       `INSERT OR REPLACE INTO observances (date_key, kind, name_ta, name_en) VALUES (?, 'ekadasi', ?, 'Ekadasi')`,
       d,
       ekadasiTa
+    );
+  }
+  for (const m of SUBHA_MUHURTHAM_DATES) {
+    await db.runAsync(
+      `INSERT OR REPLACE INTO observances (date_key, kind, name_ta, name_en) VALUES (?, 'subha_muhurtham', 'சுப முகூர்த்தம்', 'Subha Muhurtham')`,
+      m.dateKey
     );
   }
 }
