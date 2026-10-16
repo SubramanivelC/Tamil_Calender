@@ -21,6 +21,8 @@ interface AnnualCalendarProps {
   onNextYear: () => void;
   onToday: () => void;
   onSelectMonth: (month: number) => void;
+  /** Opening a date's full details — host decides how (Today view or push). */
+  onSelectDate?: (key: string) => void;
 }
 
 export function AnnualCalendar({
@@ -30,6 +32,7 @@ export function AnnualCalendar({
   onNextYear,
   onToday,
   onSelectMonth,
+  onSelectDate,
 }: AnnualCalendarProps) {
   const router = useRouter();
   const t = useT();
@@ -146,7 +149,11 @@ export function AnnualCalendar({
               cells={gridFor(m)}
               todayKey={todayKey}
               numerals={numerals}
-              onPress={(key) => router.push({ pathname: '/day-details', params: { date: key } })}
+              onPress={(key) =>
+                onSelectDate
+                  ? onSelectDate(key)
+                  : router.push({ pathname: '/day-details', params: { date: key } })
+              }
               primary={colors.primary}
               festival={colors.festival}
               muted={colors.textSecondary}
@@ -215,55 +222,55 @@ export function MiniMonth({
               >
                 {cell.day}
               </ThemedText>
-              {cell.hasFestival ? (
+              {/* Days may carry several markings at once (e.g. Pournami +
+                  Subha Muhurtham on 25 Oct 2026). Render every marker. */}
+              {cell.hasFestival ||
+              cell.isAmavasai ||
+              cell.isPournami ||
+              cell.isSubhaMuhurtham ? (
                 <View
                   style={{
-                    width: 4,
-                    height: 4,
-                    borderRadius: 2,
-                    backgroundColor: festival,
-                  }}
-                />
-              ) : cell.isAmavasai ? (
-                <View
-                  style={{
-                    width: 7,
-                    height: 4,
-                    justifyContent: 'center',
+                    flexDirection: 'row',
                     alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 2,
+                    width: '100%',
                   }}
                 >
-                  <View
-                    style={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: 3,
-                      backgroundColor: text,
-                    }}
-                  />
-                </View>
-              ) : cell.isPournami ? (
-                <View
-                  style={{
-                    width: 7,
-                    height: 4,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}
-                >
-                  <View
-                    style={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: 3,
-                      borderWidth: 1.5,
-                      borderColor: gold,
-                    }}
-                  />
-                </View>
-              ) : cell.isSubhaMuhurtham ? (
-                <View style={{ width: 9, height: 10, justifyContent: 'flex-end', alignItems: 'center' }}>
-                  <ThaliMark color={gold} size={9} />
+                  {cell.hasFestival ? (
+                    <View
+                      style={{
+                        width: 4,
+                        height: 4,
+                        borderRadius: 2,
+                        backgroundColor: festival,
+                      }}
+                    />
+                  ) : null}
+                  {cell.isAmavasai ? (
+                    <View
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: 3,
+                        backgroundColor: text,
+                      }}
+                    />
+                  ) : null}
+                  {cell.isPournami ? (
+                    <View
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: 3,
+                        borderWidth: 1.5,
+                        borderColor: gold,
+                      }}
+                    />
+                  ) : null}
+                  {cell.isSubhaMuhurtham ? (
+                    <ThaliMark color={gold} size={9} />
+                  ) : null}
                 </View>
               ) : (
                 <View style={{ height: 4 }} />

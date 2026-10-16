@@ -39,7 +39,7 @@ export const enDict = {
   reminders: 'Reminders',
   seeAll: 'See all',
   viewDetails: 'View details',
-  doubleTapHint: 'Double-tap a date to open full details',
+  doubleTapHint: 'Double-tap a date to see it in the Calendar\u2019s Today view',
 
   // Calendar
   previousMonth: 'Previous month',
@@ -57,6 +57,7 @@ export const enDict = {
   detailedView: 'Detailed',
   annualView: 'Annual view',
   monthlyView: 'Monthly view',
+  todayView: 'Today view',
 
   // Day details
   tithi: 'Tithi',
@@ -172,7 +173,7 @@ export const enDict = {
   // Reminders
   reminderListTitle: 'Reminders',
   noReminders: 'No reminders',
-  noRemindersHint: 'Add reminders from any day-details screen',
+  noRemindersHint: 'Add reminders from any Today view screen',
   reminderTime: 'Time',
   repeatYearly: 'Yearly',
   once: 'Once',

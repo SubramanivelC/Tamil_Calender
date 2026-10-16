@@ -130,7 +130,7 @@ export default function SearchScreen() {
           <Pressable
             onPress={() => {
               if (item.dateKey) {
-                router.push({ pathname: '/day-details', params: { date: item.dateKey } });
+                router.push({ pathname: '/(tabs)/calendar', params: { view: 'today', date: item.dateKey } });
               } else if (item.kind === 'tamil_month') {
                 router.push('/(tabs)/calendar');
               }
