@@ -78,7 +78,6 @@ function ThemedApp({ failed }: { failed: boolean }) {
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="day-details" options={{ presentation: 'card' }} />
         <Stack.Screen name="year-picker" options={{ presentation: 'modal' }} />
         <Stack.Screen name="add-event" options={{ presentation: 'modal' }} />
       </Stack>

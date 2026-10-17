@@ -1,0 +1,38 @@
+PROMPTS AFTER THE GITHUB PUSH (since the observance-fix commit/dcc6e06)
+PLAIN-TEXT SUMMARY (10 lines)
+------------------
+1. Post-push work spanned documentation, calendar visuals and the day-details screen, all still uncommitted in the working tree.
+2. skills.md and prompts.md were refreshed: overlay scope-discipline, theme default, month-details and day-details-nav skill entries added.
+3. The "Thirunellai" app name was removed from both doc titles; they now read only "Tamil calendar" (grep-verified zero mentions).
+4. The Subha Muhurtham marker no longer duplicates Pournami's circle: a new ThaliMark component draws the mangalyam/தாலி symbol (V-chain + pendant) in the annual legend, annual mini-cells and the monthly grid.
+5. Day-details moved into the tab navigator as a hidden tab, so the bottom menu stays visible on that screen while the /day-details URL and all deep links stay unchanged.
+6. The Gregorian row in day-details shows the elaborated "15 October 2026" format (localized month name); the weekday label remains in the top nav.
+7. A Today button was added to the day-details top nav between prev/next, dimmed and disabled when already viewing today.
+8. A clear bug found after the push was fixed: the exact-date observance query leaked the whole year's computed rows into one-day lists; it now filters to the requested date with regression guards (repos.test.ts).
+9. Most recently, the Monthly/Annual view toggle no longer hides content: both calendar ScrollViews gained 96px bottom clearance so you can scroll past the floating toggle to read the last rows.
+10. Every step passed tsc --noEmit (exit 0) and the full Jest suite (20 suites / 228 tests); the tree is ready to commit with the message below.
+
+PROMPT LIST (oldest to newest)
+------------------------------
+1. "UPdate skill and cammend" -> skills.md/prompts.md refresh with the overlay, theme-default and navigation skill entries.
+2. "Why we have thirunellai in skill amd command file. Remove keep only tamil calender." -> titles renamed, zero mentions left.
+3. "On the subha muhurtham symbol are same as pournami ... mangalyam symbol (tamil thali symbol)" -> new ThaliMark.tsx used in legend + cells.
+4. "In double click view on the date, add bottom menu all the screen keep on the screen." -> day-details inside tabs (hidden tab screen).
+5. "In double click view, Rename proper name with Gregian date, It should bee elabrated, like 15 oct 2026 format." -> elaborated Gregorian row.
+6. "In double click date view, Add one more botton to today date." -> Today pill in the day-details top nav.
+7. "In calender view ... Monthly/Annual view select option is hidding the background data ... add little more scrool to bottom" -> 96px scroll clearance in both views.
+
+TAMPUSED COMMIT MESSAGE (plain text, paste as-is)
+-------------------------------------------------
+Update calendar visuals and day-details flow; fix observance date leak
+
+- Fix getObservancesForDate leaking year-computed observances into one-day lists (Home/day-details); exact-date filter + regression tests
+- Show engine-derived amavasai/pournami/pradosham/ekadasi for all years 1900-2100 via per-year cached overlay
+- Replace duplicated Subha Muhurtham/Pournami circle with a drawn mangalyam (ThaliMark) symbol in annual + monthly calendars
+- Keep the bottom tab menu visible on the day-details screen (moved into the tab navigator as a hidden tab; URL unchanged)
+- Elaborate the day-details Gregorian date row to "15 October 2026" and add a Today button (dimmed on today)
+- Add 96px bottom scroll clearance in monthly/annual calendar views so the floating view toggle no longer hides data
+- Refresh skills.md/prompts.md (Tamil-calendar naming only) and add prompts-since-push.txt
+
+Generated with Codebuff
+Co-Authored-By: Codebuff <noreply@codebuff.com>

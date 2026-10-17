@@ -11,21 +11,61 @@ import {
   EKADASI_CENTERS,
   elongAtSunriseIST,
 } from '../lunarPhases';
-import { AM_POURNA_RECORDS } from '../seedData';
+import { AM_POURNA_RECORDS, DATASET_VERSION } from '../seedData';
 
 describe('amPournaForRange (engine-derived, arbitrary years)', () => {
-  test('reproduces the bundled dataset EXACTLY over its coverage window', () => {
-    // Same generator, same window ⇒ identical rows in identical order. This
-    // is the drift guard: any rule change breaks it loudly.
-    expect(amPournaForRange(2026, 2029)).toEqual(AM_POURNA_RECORDS);
+  test('reproduces the bundled dataset rows EXACTLY for the engine-covered years (2027-2029)', () => {
+    // Same generator, same window ⇒ identical non-transcribed rows. The 2026
+    // portion of the bundled data is transcription-verified (published lists)
+    // and intentionally may differ from the engine on borderline junctions.
+    const engine = amPournaForRange(2026, 2029).filter((r) => !r.dateKey.startsWith('2026-'));
+    expect(engine).toEqual(AM_POURNA_RECORDS.filter((r) => !r.dateKey.startsWith('2026-')));
   });
 
-  test('2026 contains the documented Jan 19 amavasai and Jan 3 pournami', () => {
-    const rows = amPournaForRange(2026, 2026);
-    const am = rows.find((r) => r.kind === 'amavasai');
-    expect(am?.dateKey).toBe('2026-01-19');
-    const firstPournami = rows.find((r) => r.kind === 'pournami');
-    expect(firstPournami?.dateKey).toBe('2026-01-03');
+  test('the SHIPPED 2026 dataset rows equal the PUBLISHED Tamil calendar dates in full (TDC + Drik, Chennai/IST)', () => {
+    // Trust anchor for the bundled data: the 2026 portion of AM_POURNA_RECORDS
+    // must be the transcription-verified published lists (tamildailycalendar
+    // amavasai.php/pournami.php?Year=2026, corroborated by Drik Chennai
+    // amavasya/purnima tables): 12 amavasai + 13 pournami, exact days.
+    const PUBLISHED_AMAVASAI = [
+      '2026-01-18', '2026-02-17', '2026-03-18', '2026-04-17', '2026-05-16',
+      '2026-06-14', '2026-07-14', '2026-08-12', '2026-09-10', '2026-10-10',
+      '2026-11-08', '2026-12-08',
+    ];
+    const PUBLISHED_POURNAMI = [
+      '2026-01-03', '2026-02-01', '2026-03-03', '2026-04-01', '2026-05-01',
+      '2026-05-31', '2026-06-29', '2026-07-29', '2026-08-27', '2026-09-26',
+      '2026-10-25', '2026-11-24', '2026-12-23',
+    ];
+    expect(DATASET_VERSION.startsWith('2026.10')).toBe(true);
+    const shipped = AM_POURNA_RECORDS.filter((r) => r.dateKey.startsWith('2026-'));
+    expect(shipped.filter((r) => r.kind === 'amavasai').map((r) => r.dateKey)).toEqual(PUBLISHED_AMAVASAI);
+    expect(shipped.filter((r) => r.kind === 'pournami').map((r) => r.dateKey)).toEqual(PUBLISHED_POURNAMI);
+    expect(shipped).toHaveLength(25);
+  });
+
+  test('the ENGINE stays within ±1 day of the published 2026 lists (documented borderline precision)', () => {
+    const PUBLISHED_AMAVASAI = [
+      '2026-01-18', '2026-02-17', '2026-03-18', '2026-04-17', '2026-05-16',
+      '2026-06-14', '2026-07-14', '2026-08-12', '2026-09-10', '2026-10-10',
+      '2026-11-08', '2026-12-08',
+    ];
+    const PUBLISHED_POURNAMI = [
+      '2026-01-03', '2026-02-01', '2026-03-03', '2026-04-01', '2026-05-01',
+      '2026-05-31', '2026-06-29', '2026-07-29', '2026-08-27', '2026-09-26',
+      '2026-10-25', '2026-11-24', '2026-12-23',
+    ];
+    const engine = amPournaForRange(2026, 2026);
+    const pairAdjacent = (a: string, b: string) => {
+      const diff = Math.abs(Date.parse(a) - Date.parse(b)) / 86400000;
+      return diff <= 1;
+    };
+    for (const p of PUBLISHED_AMAVASAI) {
+      expect(engine.some((r) => r.kind === 'amavasai' && pairAdjacent(r.dateKey, p))).toBe(true);
+    }
+    for (const p of PUBLISHED_POURNAMI) {
+      expect(engine.some((r) => r.kind === 'pournami' && pairAdjacent(r.dateKey, p))).toBe(true);
+    }
   });
 
   test.each([1990, 2050])('%i: plausible amavasai/pournami counts', (year) => {
@@ -51,6 +91,7 @@ describe('amPournaForRange (engine-derived, arbitrary years)', () => {
   test('conjunction days alternate near-exactly a fortnight apart (1990)', () => {
     const rows = amPournaForRange(1990, 1990);
     expect(rows.length).toBeGreaterThanOrEqual(24);
+    expect(rows.length).toBeLessThanOrEqual(26);
     const toDay = (key: string) => {
       const [y, m, d] = key.split('-').map(Number);
       return Date.UTC(y ?? 0, (m ?? 1) - 1, d ?? 1) / 86400000;

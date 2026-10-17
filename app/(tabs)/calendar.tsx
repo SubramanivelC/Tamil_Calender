@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { ScrollView, View, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
+import { ScrollView, View, Pressable, StyleSheet } from 'react-native';
 import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,16 +14,25 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { useT } from '@/localization';
 import { useSettingsStore } from '@/store/settingsStore';
 import { spacing } from '@/theme/spacing';
-import { addMonths, addDays, toDateKey, daysInMonth, localTodayKey, parseDateKey } from '@/utils/dates';
+import { addMonths, addDays, toDateKey, daysInMonth, localTodayKey, parseDateKey, isValidDateKey } from '@/utils/dates';
 import { gregorianMonthName, tamilMonthName, weekdayName } from '@/localization';
 import { getFestivalsForMonth } from '@/database/repositories/festivalRepo';
 import { TAMIL_MONTHS } from '@/data/mappings';
 import { AnnualCalendar } from '@/features/calendar/AnnualCalendar';
 import { tamilMonthsSpanningGregorianMonth } from '@/features/calendar/tamilMonthSpan';
+import { DayDetailsContent } from '@/features/daydetails/DayDetailsContent';
+
+/** The three views of the Calendar tab. Daily detail content is the
+    "Today" view, embedded so the bottom menu stays visible. */
+type CalendarView = 'monthly' | 'today' | 'annual';
+
+function normalizeView(v: unknown): CalendarView | null {
+  return v === 'today' || v === 'annual' || v === 'monthly' ? v : null;
+}
 
 export default function CalendarScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ view?: string }>();
+  const params = useLocalSearchParams<{ view?: string; date?: string }>();
   const t = useT();
   const { colors } = useThemeColors();
   const language = useSettingsStore((s) => s.language);
@@ -31,7 +40,6 @@ export default function CalendarScreen() {
   const firstDayOfWeek = useSettingsStore((s) => s.firstDayOfWeek);
   const defaultView = useSettingsStore((s) => s.defaultCalendarView);
 
-  const [annual, setAnnual] = useState(params.view === 'annual' || defaultView === 'annual');
   const todayKey = useMemo(() => localTodayKey(), []);
   const todayParts = parseDateKey(todayKey);
   const [year, setYear] = useState(todayParts.year);
@@ -42,8 +50,36 @@ export default function CalendarScreen() {
     // Re-read month details when returning (e.g. after adding an event).
     useCallback(() => setRefreshSignal((s) => s + 1), [])
   );
-  const [previousMonthLabel, setPreviousMonthLabel] = useState('');
-  const [nextYearLabel] = useState('');
+
+  // View state — initialized from route params (deep link / double-tap from
+  // Home), otherwise the user's default (monthly). `todayDate` is the date
+  // shown in the Today (daily details) view.
+  const [view, setView] = useState<CalendarView>(
+    () => normalizeView(params.view) ?? defaultView
+  );
+  const [todayDate, setTodayDate] = useState<string>(() =>
+    typeof params.date === 'string' && isValidDateKey(params.date) ? params.date : todayKey
+  );
+
+  // Navigations arriving while the Calendar tab is already mounted (e.g.
+  // double-tapping a Home date) update view/date via params. When params
+  // carry no explicit view, fall back to the user's default — this is what
+  // makes a direct Calendar tab press open the Monthly view.
+  // Adjusted *during render* (per ref of the last-seen param signature) so
+  // state resets exactly when params change, without a setState-in-effect.
+  const currentParamSeq = `${params.view ?? ''}|${(params.date as string | undefined) ?? ''}`;
+  const [paramSeq, setParamSeq] = useState(currentParamSeq);
+  if (paramSeq !== currentParamSeq) {
+    setParamSeq(currentParamSeq);
+    const pView = normalizeView(params.view);
+    if (pView) {
+      setView(pView);
+      const pDate = typeof params.date === 'string' && isValidDateKey(params.date) ? params.date : todayKey;
+      setTodayDate(pDate);
+    } else {
+      setView(defaultView);
+    }
+  }
 
   const { map: decorations, refetch: refetchDecorations } = useMonthDecorations(year, month);
   // Header shows both Tamil months the Gregorian month spans (e.g. Jan =
@@ -78,6 +114,18 @@ export default function CalendarScreen() {
     setYear((y) => y + delta);
   };
 
+  /** Open a specific date's full details inside the Today view. */
+  const openTodayView = useCallback(
+    (key: string) => {
+      setTodayDate(key);
+      setView('today');
+    },
+    []
+  );
+
+  const annual = view === 'annual';
+  const showToday = view === 'today';
+
   if (annual) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
@@ -89,15 +137,33 @@ export default function CalendarScreen() {
           onToday={() => {
             setYear(todayParts.year);
             setMonth(todayParts.month);
-            setAnnual(false);
+            setView('monthly');
           }}
           onSelectMonth={(m) => {
             setMonth(m);
-            setAnnual(false);
+            setView('monthly');
           }}
+          onSelectDate={openTodayView}
         />
         <View style={styles.viewToggle}>
-          <ViewToggle annual={annual} onToggle={setAnnual} t={t} />
+          <ViewToggle view={view} onChange={setView} t={t} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (showToday) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
+        <DayDetailsContent
+          dateKey={todayDate}
+          onChangeDate={setTodayDate}
+          onBack={() => setView('monthly')}
+          onAddEvent={() => router.push({ pathname: '/add-event', params: { date: todayDate } })}
+          bottomPadding={spacing.xxxl + 60}
+        />
+        <View style={styles.viewToggle}>
+          <ViewToggle view={view} onChange={setView} t={t} />
         </View>
       </SafeAreaView>
     );
@@ -105,7 +171,9 @@ export default function CalendarScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
-      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxl }}>
+      {/* Bottom clearance: the floating Monthly/Today/Annual toggle overlays the
+          scroll area, so pad past it to keep the last rows readable. */}
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxxl + 56 }}>
         <MonthSelector
           monthName={gregorianMonthName(month, language)}
           tamilMonthName={tamilMonthLine}
@@ -130,14 +198,14 @@ export default function CalendarScreen() {
             numerals={numerals}
             showTamilDate
             selectedKey={todayKey}
-            onSelectDate={(key) => router.push({ pathname: '/day-details', params: { date: key } })}
+            onSelectDate={openTodayView}
           />
         </Card>
         <MonthDetails
           year={year}
           month={month}
           refreshSignal={refreshSignal}
-          onSelectDate={(key) => router.push({ pathname: '/day-details', params: { date: key } })}
+          onSelectDate={openTodayView}
         />
         <View style={styles.legendRow}>
           <ThemedText variant="caption" color="secondary">
@@ -169,22 +237,28 @@ export default function CalendarScreen() {
         </View>
       </ScrollView>
       <View style={styles.viewToggle}>
-        <ViewToggle annual={annual} onToggle={setAnnual} t={t} />
+        <ViewToggle view={view} onChange={setView} t={t} />
       </View>
     </SafeAreaView>
   );
 }
 
+/** Floating three-way switch: Monthly · Today · Annual. */
 function ViewToggle({
-  annual,
-  onToggle,
+  view,
+  onChange,
   t,
 }: {
-  annual: boolean;
-  onToggle: (v: boolean) => void;
+  view: CalendarView;
+  onChange: (v: CalendarView) => void;
   t: (k: string) => string;
 }) {
   const { colors } = useThemeColors();
+  const items: { key: CalendarView; label: string }[] = [
+    { key: 'monthly', label: t('monthlyView') },
+    { key: 'today', label: t('todayView') },
+    { key: 'annual', label: t('annualView') },
+  ];
   return (
     <View
       style={[
@@ -192,26 +266,19 @@ function ViewToggle({
         { backgroundColor: colors.surfaceMuted },
       ]}
     >
-      <Pressable
-        onPress={() => onToggle(false)}
-        accessibilityRole="button"
-        accessibilityState={{ selected: !annual }}
-        style={[styles.toggleBtn, !annual && { backgroundColor: colors.surface }]}
-      >
-        <ThemedText variant="small" weight={!annual ? 'medium' : 'regular'}>
-          {t('monthlyView')}
-        </ThemedText>
-      </Pressable>
-      <Pressable
-        onPress={() => onToggle(true)}
-        accessibilityRole="button"
-        accessibilityState={{ selected: annual }}
-        style={[styles.toggleBtn, annual && { backgroundColor: colors.surface }]}
-      >
-        <ThemedText variant="small" weight={annual ? 'medium' : 'regular'}>
-          {t('annualView')}
-        </ThemedText>
-      </Pressable>
+      {items.map((item) => (
+        <Pressable
+          key={item.key}
+          onPress={() => onChange(item.key)}
+          accessibilityRole="button"
+          accessibilityState={{ selected: view === item.key }}
+          style={[styles.toggleBtn, view === item.key && { backgroundColor: colors.surface }]}
+        >
+          <ThemedText variant="small" weight={view === item.key ? 'medium' : 'regular'}>
+            {item.label}
+          </ThemedText>
+        </Pressable>
+      ))}
     </View>
   );
 }
@@ -233,7 +300,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   toggleBtn: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 999,
   },

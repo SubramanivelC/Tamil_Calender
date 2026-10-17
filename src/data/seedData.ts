@@ -32,8 +32,10 @@ const COVERAGE = { start: { y: 2026, m: 1, d: 1 }, end: { y: 2029, m: 12, d: 31 
 
 
 /**
- * Amavasai/Pournami: the calendar day containing the conjunction (elongation
- * crossing 0°/180° between two sunrises) — the printed-calendar convention.
+ * Amavasai/Pournami: the calendar day on which the PHASE TITHI BEGINS
+ * (amavasai tithi spans elong [348°,360°), pournami spans [168°,180°)) —
+ * the printed Tamil junction-day rule. See src/data/lunarPhases.ts; the
+ * conjunction-day variant labeled ~13/25 of the 2026 dates one day late.
  */
 function generateAmPourna(): AmavasaiPournamiRecord[] {
   // Same generators as the shared runtime module, restricted to the bundled
@@ -51,8 +53,36 @@ function generateTithiBandDates(centers: number[]): string[] {
   return tithiBandDatesForRange(centers, COVERAGE.start.y, COVERAGE.end.y);
 }
 
-/** Amavasai + Pournami dates for the coverage window (engine-derived). */
-export const AM_POURNA_RECORDS: AmavasaiPournamiRecord[] = generateAmPourna();
+/**
+ * Amavasai + Pournami dates for the coverage window.
+ *
+ * 2026 = transcription-verified from the published Tamil calendars
+ * (tamildailycalendar.com amavasai/pournami 2026, corroborated by Drik
+ * Panchang's Chennai amavasya/purnima tables — see the trust-anchor test).
+ * The junction decision separating which of the two days a phase belongs to
+ * sits within the truncated series' hour-scale error (a handful of 2026
+ * phases fall within ~2h of midnight), so within our ephemeris precision
+ * **the published lists — not the engine — are truth for the coverage
+ * years**; the engine (lunarPhases.ts tithi-start rule) covers 2027-2029
+ * and arbitrary runtime years with an occasional borderline ±1 day.
+ */
+const PUBLISHED_2026_AMAVASAI = [
+  '2026-01-18', '2026-02-17', '2026-03-18', '2026-04-17', '2026-05-16',
+  '2026-06-14', '2026-07-14', '2026-08-12', '2026-09-10', '2026-10-10',
+  '2026-11-08', '2026-12-08',
+];
+const PUBLISHED_2026_POURNAMI = [
+  '2026-01-03', '2026-02-01', '2026-03-03', '2026-04-01', '2026-05-01',
+  '2026-05-31', '2026-06-29', '2026-07-29', '2026-08-27', '2026-09-26',
+  '2026-10-25', '2026-11-24', '2026-12-23',
+];
+export const AM_POURNA_RECORDS: AmavasaiPournamiRecord[] = generateAmPourna()
+  .filter((r) => !r.dateKey.startsWith('2026-'))
+  .concat([
+    ...PUBLISHED_2026_AMAVASAI.map((dateKey) => ({ dateKey, kind: 'amavasai' as const })),
+    ...PUBLISHED_2026_POURNAMI.map((dateKey) => ({ dateKey, kind: 'pournami' as const })),
+  ])
+  .sort((a, b) => a.dateKey.localeCompare(b.dateKey));
 
 /** Pradosham (trayodashi) dates for the coverage window (engine-derived). */
 export const PRADOSHAM_DATES: string[] = generateTithiBandDates(PRADOSHAM_CENTERS);
@@ -311,7 +341,7 @@ export const SUBHA_MUHURTHAM_DATES: SubhaMuhurthamDate[] = [
   { dateKey: '2029-12-23' }, { dateKey: '2029-12-25' }, { dateKey: '2029-12-26' },
 ];
 
-export const DATASET_VERSION = '2026.10-subset.5';
+export const DATASET_VERSION = '2026.10-subset.6';
 export const DATASET_COVERAGE_START = '2026-01-01';
 export const DATASET_COVERAGE_END = '2029-12-31';
 

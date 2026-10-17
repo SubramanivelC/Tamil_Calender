@@ -1,10 +1,8 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { ScrollView, View, Pressable, StyleSheet, TextInput, Share } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView, Card } from '@/components/ThemedView';
+import { Card } from '@/components/ThemedView';
 import { SectionHeader } from '@/components/SectionHeader';
 import { TimeRow } from '@/components/TimeRow';
 import { FestivalRow } from '@/components/FestivalRow';
@@ -14,41 +12,61 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { useT } from '@/localization';
 import { cleanBilingualValue } from '@/utils/bilingual';
 import { useSettingsStore } from '@/store/settingsStore';
-import { useDayDetails } from '@/features/daydetails/useDayDetails';
-import { saveNote as saveNoteToDb } from '@/database/repositories/userDataRepo';
-import { toggleBookmark, isBookmarked } from '@/database/repositories/userDataRepo';
+import { useDayDetails } from '@/features/daydetails/useDayDetails';import { saveNote as saveNoteToDb } from '@/database/repositories/userDataRepo';
+import { toggleBookmark } from '@/database/repositories/userDataRepo';
 import { useRemindersStore } from '@/store/remindersStore';
 import { getEventsForDate, deleteEvent } from '@/database/repositories/eventsRepo';
-import type { UserEvent, ReminderDefinition } from '@/types';
+import type { UserEvent, ReminderDefinition, Language } from '@/types';
 import { DEFAULT_REMINDER_HHMM } from '@/data/constants';
 import { spacing } from '@/theme/spacing';
 import { formatTimeWithMeridiem } from '@/utils/numerals';
-import { localTodayKey, isValidDateKey } from '@/utils/dates';
+import { localTodayKey, parseDateKey } from '@/utils/dates';
+import { gregorianMonthName } from '@/localization';
 
-export default function DayDetailsScreen() {
-  const router = useRouter();
-  const { date } = useLocalSearchParams<{ date: string }>();
-  // Guard: some entry points (e.g. the Reminders quick action) navigate here
-  // without a `date` param — fall back to today instead of crashing on
-  // `parseDateKey('')`.
-  const passable = typeof date === 'string' && isValidDateKey(date) ? date : null;
-  const dateKey = passable ?? localTodayKey();
+/**
+ * Full single-day detail content — the "Today View" of the Calendar tab.
+ * Self-contained: loads panchangam, festivals, observances, note, bookmark,
+ * events and reminders for `dateKey`.
+ *
+ * Host decides navigation:
+ * - `onChangeDate` is called for the previous/next-day and "jump to today"
+ *   controls (e.g. update a URL param in the day-details screen, or local
+ *   state inside the Calendar tab).
+ * - `onBack` backs out to the previous screen. Sits in the top bar.
+ * - `bottomPadding` reserves space so content stays readable above the
+ *   floating view toggle when embedded in the Calendar tab.
+ */
+export function DayDetailsContent({
+  dateKey,
+  onChangeDate,
+  onBack,
+  onAddEvent,
+  bottomPadding,
+}: {
+  dateKey: string;
+  onChangeDate: (key: string) => void;
+  onBack: () => void;
+  onAddEvent: () => void;
+  bottomPadding?: number;
+}) {
   const t = useT();
   const { colors } = useThemeColors();
   const language = useSettingsStore((s) => s.language);
+  const isToday = dateKey === localTodayKey();
   const { data, loading, previousKey, nextKey } = useDayDetails(dateKey, language);
 
   const [noteText, setNoteText] = useState<string>('');
   const [noteLoadedFor, setNoteLoadedFor] = useState<string>('');
   const [bookmarked, setBookmarked] = useState<boolean>(false);
 
-  React.useEffect(() => {
-    if (data && noteLoadedFor !== dateKey) {
-      setNoteText(data.note ?? '');
-      setNoteLoadedFor(dateKey);
-      setBookmarked(data.bookmarked);
-    }
-  }, [data, dateKey, noteLoadedFor]);
+  // Reset the note/bookmark fields when the loaded data changes date —
+  // adjusted during render (guarded by noteLoadedFor) rather than inside an
+  // effect, which would trigger cascading renders.
+  if (data && noteLoadedFor !== dateKey) {
+    setNoteText(data.note ?? '');
+    setNoteLoadedFor(dateKey);
+    setBookmarked(data.bookmarked);
+  }
 
   // Select the stable store slices directly — `remindersForDate` builds a new
   // array per snapshot, and an unstable zustand v5 selector causes an infinite
@@ -76,16 +94,12 @@ export default function DayDetailsScreen() {
   }, [dateKey]);
 
   const onDeleteEvent = useCallback(async (id: number) => {
+    const { cancelScheduledNotification } = await import('@/services/notificationService');
     const ev = dayEvents.find((e) => e.id === id);
-    if (ev?.notificationId) await cancelScheduledNotificationWrapper(ev.notificationId);
+    if (ev?.notificationId) await cancelScheduledNotification(ev.notificationId);
     await deleteEvent(id);
     setDayEvents((prev) => prev.filter((e) => e.id !== id));
   }, [dayEvents]);
-
-  async function cancelScheduledNotificationWrapper(nid: string) {
-    const { cancelScheduledNotification } = await import('@/services/notificationService');
-    await cancelScheduledNotification(nid);
-  }
 
   const onShare = useCallback(() => {
     if (!data) return;
@@ -134,9 +148,9 @@ export default function DayDetailsScreen() {
   const cleanedPaksha = data.pakshaLabel ? cleanBilingualValue(data.pakshaLabel, language) : null;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
+    <View style={{ flex: 1 }}>
       <View style={styles.topBar}>
-        <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel={t('back')}>
+        <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel={t('back')}>
           <Ionicons name="arrow-back" size={22} color={colors.text} />
         </Pressable>
         <View style={styles.topBarActions}>
@@ -153,7 +167,7 @@ export default function DayDetailsScreen() {
           always visible without scrolling to the bottom. */}
       <View style={styles.dayNav}>
         <Pressable
-          onPress={() => router.setParams({ date: previousKey })}
+          onPress={() => onChangeDate(previousKey)}
           accessibilityRole="button"
           accessibilityLabel={t('previousDay')}
           style={[styles.dayNavBtn, { minHeight: 44, minWidth: 44, justifyContent: 'center' }]}
@@ -163,11 +177,32 @@ export default function DayDetailsScreen() {
             {t('previousDay')}
           </ThemedText>
         </Pressable>
-        <ThemedText variant="caption" color="secondary" style={styles.dayNavDate}>
-          {data.gregorianLabel}
-        </ThemedText>
+        <View style={styles.dayNavCenter}>
+          <ThemedText variant="caption" color="secondary" style={styles.dayNavDate}>
+            {data.gregorianLabel}
+          </ThemedText>
+          <Pressable
+            disabled={isToday}
+            onPress={() => onChangeDate(localTodayKey())}
+            accessibilityRole="button"
+            accessibilityLabel={t('jumpToToday')}
+            accessibilityState={{ disabled: isToday }}
+            style={[
+              styles.dayNavTodayBtn,
+              isToday && styles.dayNavTodayBtnActive,
+            ]}
+          >
+            <ThemedText
+              variant="small"
+              weight="medium"
+              color={isToday ? 'secondary' : 'primary'}
+            >
+              {t('jumpToToday')}
+            </ThemedText>
+          </Pressable>
+        </View>
         <Pressable
-          onPress={() => router.setParams({ date: nextKey })}
+          onPress={() => onChangeDate(nextKey)}
           accessibilityRole="button"
           accessibilityLabel={t('nextDay')}
           style={[styles.dayNavBtn, { minHeight: 44, minWidth: 44, justifyContent: 'center' }]}
@@ -179,7 +214,7 @@ export default function DayDetailsScreen() {
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxxl }}>
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: bottomPadding ?? spacing.xxxl }}>
         <Card style={{ padding: spacing.lg, marginBottom: spacing.xl }}>
           <ThemedText variant="small" color="secondary">
             {dateKey}
@@ -192,7 +227,7 @@ export default function DayDetailsScreen() {
               {t('gregorianDate')}:
             </ThemedText>
             <ThemedText variant="body" style={styles.metaRowValue}>
-              {data.gregorianLabel}
+              {elaboratedGregorian(dateKey, language)}
             </ThemedText>
           </View>
           <View style={styles.metaRow}>
@@ -289,7 +324,7 @@ export default function DayDetailsScreen() {
         <SectionHeader
           title={t('events')}
           actionLabel={t('addEvent')}
-          onAction={() => router.push({ pathname: '/add-event', params: { date: dateKey } })}
+          onAction={onAddEvent}
         />
         <View style={{ marginBottom: spacing.xl }}>
           {dayEvents.map((ev) => (
@@ -349,8 +384,15 @@ export default function DayDetailsScreen() {
         </View>
 
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
+}
+
+/** Elaborated `15 October 2026` (localized month name) instead of the
+ *  weekday-prefixed label used in the top nav. */
+function elaboratedGregorian(key: string, language: string): string {
+  const { year, month, day } = parseDateKey(key);
+  return `${day} ${gregorianMonthName(month, language as Language)} ${year}`;
 }
 
 const styles = StyleSheet.create({
@@ -411,7 +453,22 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   dayNavDate: {
-    flex: 1,
     textAlign: 'center',
+  },
+  dayNavCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+  },
+  dayNavTodayBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 999,
+    minHeight: 26,
+    justifyContent: 'center',
+  },
+  dayNavTodayBtnActive: {
+    opacity: 0.5,
   },
 });

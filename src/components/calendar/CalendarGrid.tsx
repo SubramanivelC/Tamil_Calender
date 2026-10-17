@@ -6,6 +6,7 @@ import { weekdayName } from '@/localization';
 import { ThemedText } from '@/components/ThemedText';
 import type { DayCell, Language, NumeralStyle } from '@/types';
 import { formatNumerals } from '@/utils/numerals';
+import { ThaliMark } from '@/components/calendar/ThaliMark';
 import { spacing, minTouchTarget } from '@/theme/spacing';
 
 export interface CalendarGridProps {
@@ -105,54 +106,16 @@ function CalendarCell({
               ·
             </Text>
           ) : null}
-          {cell.hasFestival ? (
-            <View
-              style={{
-                width: 5,
-                height: 5,
-                borderRadius: 3,
-                backgroundColor: today ? theme.colors.gold : theme.colors.festival,
-                marginTop: 2,
-              }}
-            />
-          ) : cell.isSubhaMuhurtham ? (
-            <View
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: 3,
-                borderWidth: 1.5,
-                borderColor: today ? theme.colors.textOnMaroon : theme.colors.gold,
-                marginTop: 2,
-              }}
-            />
-          ) : cell.isAmavasai || cell.isPournami ? (
+          {/* Days may carry several markings at once (e.g. 25 Oct 2026 is
+              both Pournami and a Subha Muhurtham date). Render every marker,
+              not just the first matching one. */}
+          {markersFor(cell, today, theme.colors).length > 0 ? (
             <View
               pointerEvents="none"
-              style={{
-                width: 9,
-                height: 9,
-                borderRadius: 4.5,
-                marginTop: 2,
-                borderWidth: cell.isPournami ? 1.5 : 0,
-                borderColor: theme.colors.gold,
-                backgroundColor: cell.isAmavasai
-                  ? today
-                    ? theme.colors.textOnMaroon
-                    : theme.colors.text
-                  : 'transparent',
-              }}
-            />
-          ) : cell.hasEvent ? (
-            <View
-              style={{
-                width: 5,
-                height: 5,
-                borderRadius: 3,
-                backgroundColor: theme.colors.success,
-                marginTop: 2,
-              }}
-            />
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 2 }}
+            >
+              {markersFor(cell, today, theme.colors)}
+            </View>
           ) : (
             <View style={{ height: 7, marginTop: 2 }} />
           )}
@@ -160,6 +123,73 @@ function CalendarCell({
       )}
     </Pressable>
   );
+}
+
+/** All markers a day carries, in legend order: festival, moon phase,
+ *  Subha Muhurtham thali, user event. */
+function markersFor(
+  cell: DayCell,
+  today: boolean,
+  colors: {
+    gold: string;
+    festival: string;
+    success: string;
+    text: string;
+    textOnMaroon: string;
+  }
+): React.ReactNode[] {
+  const markers: React.ReactNode[] = [];
+  if (cell.hasFestival) {
+    markers.push(
+      <View
+        key="festival"
+        style={{
+          width: 5,
+          height: 5,
+          borderRadius: 3,
+          backgroundColor: today ? colors.gold : colors.festival,
+        }}
+      />
+    );
+  }
+  if (cell.isAmavasai || cell.isPournami) {
+    markers.push(
+      <View
+        key="moon"
+        style={{
+          width: 9,
+          height: 9,
+          borderRadius: 4.5,
+          borderWidth: cell.isPournami ? 1.5 : 0,
+          borderColor: colors.gold,
+          backgroundColor: cell.isAmavasai
+            ? today
+              ? colors.textOnMaroon
+              : colors.text
+            : 'transparent',
+        }}
+      />
+    );
+  }
+  if (cell.isSubhaMuhurtham) {
+    markers.push(
+      <ThaliMark key="thali" color={today ? colors.textOnMaroon : colors.gold} size={8} />
+    );
+  }
+  if (cell.hasEvent) {
+    markers.push(
+      <View
+        key="event"
+        style={{
+          width: 5,
+          height: 5,
+          borderRadius: 3,
+          backgroundColor: colors.success,
+        }}
+      />
+    );
+  }
+  return markers;
 }
 
 export function CalendarGrid({

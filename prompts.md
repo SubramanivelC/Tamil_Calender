@@ -1,4 +1,4 @@
-# Codebuff prompts — Thirunellai/Tamil calendar app
+# Codebuff prompts — Tamil calendar app
 
 All follow-up prompts suggested during this chat, grouped by the feature they belong to.
 Each line is a ready-to-paste prompt (clickable suggestion cards earlier in the chat ran the same text).
@@ -24,3 +24,15 @@ Each line is a ready-to-paste prompt (clickable suggestion cards earlier in the 
 ## Home Rasi Palam card
 11. (Covered by prompt 2 above — add the headline/transit detail, then link it deeper with the
     "More details" action that now exists in the home card.)
+
+## User prompt history (last 5, newest first)
+- "In Double click date ... previous day and next day option. Move this option to top of the scrren."
+- "can you please generate one file for all the skills used to build this app?"
+- "Can you please generate one file with all the promt"
+- "In home page, in Rasi palam section, If i click the more details, it should land to Myrasi palan menu..."
+- "In the Calender menu, Monthly view, Below the calender, give me all the details about the month..."
+
+## Current open suggestions (from the latest sessions)
+12. Show the panchangam tithi/nakshatra day details on Home inline, like the day-details view.
+13. Verify the exact-date observance fix on a heavy date (amavasai also pradosham).
+14. Try prompt 1 now: start the dev server and walk me through the My Rasi Palam flow.

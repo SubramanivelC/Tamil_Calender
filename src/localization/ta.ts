@@ -59,6 +59,7 @@ export const taDict = {
   detailedView: 'விரிவான',
   annualView: 'ஆண்டு பார்வை',
   monthlyView: 'மாத பார்வை',
+  todayView: 'இன்று பார்வை',
 
   // Day details
   tithi: 'திதி',
@@ -174,7 +175,7 @@ export const taDict = {
   // Reminders
   reminderListTitle: 'நினைவூட்டல்கள்',
   noReminders: 'நினைவூட்டல்கள் இல்லை',
-  noRemindersHint: 'தேதி விவரங்களில் இருந்து நினைவூட்டல் சேர்க்கலாம்',
+  noRemindersHint: 'இன்று பார்வையில் இருந்து நினைவூட்டல் சேர்க்கலாம்',
   reminderTime: 'நேரம்',
   repeatYearly: 'ஆண்டுதோறும்',
   once: 'ஒருமுறை',

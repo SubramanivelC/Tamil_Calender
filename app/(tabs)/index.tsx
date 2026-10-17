@@ -38,8 +38,9 @@ export default function HomeScreen() {
   const { data, loading, refetch } = useHomeData(selectedKey);
 
   // Double-tap detection on the calendar grid: a second tap on the same date
-  // within the double-tap window opens the full day-details page; otherwise
-  // the tap just selects the date and reveals the quick details inline below.
+  // within the double-tap window opens that date's full details in the
+  // Calendar tab's Today view; otherwise the tap just selects the date and
+  // reveals the quick details inline below.
   const lastTapRef = useRef<{ key: string; time: number } | null>(null);
   const DOUBLE_TAP_MS = 300;
 
@@ -50,7 +51,9 @@ export default function HomeScreen() {
       if (last && last.key === key && now - last.time < DOUBLE_TAP_MS) {
         lastTapRef.current = null;
         setSelectedKey(key);
-        router.push({ pathname: '/day-details', params: { date: key } });
+        // Open the day's full details under the Calendar tab's Today view,
+        // keeping the bottom menu visible.
+        router.push({ pathname: '/(tabs)/calendar', params: { view: 'today', date: key } });
         return;
       }
       lastTapRef.current = { key, time: now };
@@ -123,7 +126,7 @@ export default function HomeScreen() {
               <ThemedText variant="caption" color="secondary" style={{ marginTop: spacing.md }}>
                 {t('doubleTapHint')}
               </ThemedText>
-              <Pressable onPress={() => router.push({ pathname: '/day-details', params: { date: selectedKey } })}>
+              <Pressable onPress={() => router.push({ pathname: '/(tabs)/calendar', params: { view: 'today', date: selectedKey } })}>
                 <View style={{ alignSelf: 'flex-end', marginTop: spacing.md }}>
                   <ThemedText variant="small" color="primary" weight="medium">
                     {t('viewDetails')} →
@@ -141,7 +144,7 @@ export default function HomeScreen() {
                     key={`${f.festivalId}-${f.dateKey}`}
                     title={t('language') === 'ta' ? f.nameTa : f.nameEn}
                     dateLabel={f.dateKey}
-                    onPress={() => router.push({ pathname: '/day-details', params: { date: f.dateKey } })}
+                    onPress={() => router.push({ pathname: '/(tabs)/calendar', params: { view: 'today', date: f.dateKey } })}
                   />
                 ))}
                 {data.upcoming.length === 0 ? (
@@ -158,7 +161,7 @@ export default function HomeScreen() {
             onAnnual={() => router.push('/(tabs)/calendar?view=annual')}
             onFestivals={() => router.push('/(tabs)/festivals')}
             onSearch={() => router.push('/(tabs)/search')}
-            onReminders={() => router.push('/day-details?panel=reminders')}
+            onReminders={() => router.push({ pathname: '/(tabs)/calendar', params: { view: 'today' } })}
           />
         </View>
       </ScrollView>

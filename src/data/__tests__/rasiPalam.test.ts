@@ -106,9 +106,19 @@ describe('computeDailyPalam', () => {
     expect(a).toEqual(b);
   });
 
-  test('physical anchor: on the Jan 19 2026 amavasai, moon sits in the sun rasi (Makaram)', () => {
-    // Amavasai ⇒ sun and moon share a sidereal rasi; mid-January the sun is
-    // inside Makaram (Makara sankranti ~Jan 14, engine-verified dataset).
+  test('physical anchor: on the PRINTED amavasai day (Jan 18), the moon sits inside the amavasai tithi band', () => {
+    // Printed Tamil calendars label the day on which the amavasai tithi
+    // (elong [348°,360°)) BEGINS — not the conjunction instant's day. On that
+    // sunrise the moon is 0–12° behind the sun (same/adjacent sidereal rasi).
+    const meJD = julianDayAtSunrise(2026, 1, 18, '06:30');
+    const elong = toSidereal(sunMoonLongitudesAtJd(meJD), meJD).elongation;
+    expect(elong).toBeGreaterThanOrEqual(348);
+    expect(elong).toBeLessThan(360);
+  });
+
+  test('physical anchor: the morning AFTER conjunction (Jan 19), sun and moon share Makaram', () => {
+    // Mid-January the sun is inside Makaram (Makara sankranti ~Jan 14); just
+    // past new moon the moon trails it by only ~2°, i.e. the same sidereal rasi.
     const sid = toSidereal(sunMoonLongitudesAtJd(sunriseJD), sunriseJD);
     const sunRasi = Math.floor(sid.sunSidereal / 30);
     expect(sunRasi).toBe(9); // Makaram

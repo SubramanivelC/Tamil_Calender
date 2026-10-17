@@ -1,4 +1,4 @@
-# Skills used to build this app (Thirunellai — Tamil calendar)
+# Skills used to build this app (Tamil calendar)
 
 A map of every engineering and domain skill exercised while building the app,
 with the concrete places each was applied. Read together with `README.md`,
@@ -61,12 +61,21 @@ with the concrete places each was applied. Read together with `README.md`,
 - Runtime engine-derived overlays (arbitrary-year amavasai/pournami/
   pradosham/ekadasi via per-year cached generation + DB-authoritative
   merge/dedupe) — pattern in `src/database/repositories/festivalRepo.ts`.
+- **Query-scope discipline for overlays**: a computed year-wide overlay must
+  be filter-reduced to each caller's scope (date/month/year) — the exact-date
+  query initially leaked every observance of the year into single-day lists
+  (Home/day-details bug) and is now guarded by regression tests asserting
+  `date_key === request`, empty results on quiet dates, and ≤2 rows/day.
 
 ### State, theming & i18n
 - Zustand persisted settings (theme, language, numerals, rasi palam,
   notification prefs) with derivation logic (e.g., `setBirthStar` deriving
   janma rasi) → `src/store/settingsStore.ts`.
 - Dual-theme design tokens + font scaling → `src/theme/*`.
+- **Theme default policy**: the store defaults to light (white) rather than
+  following the OS (`settingsStore.themeMode: 'light'`); System/Dark remain
+  explicit user choices in Settings — with the test fixture deliberately not
+  pre-setting the key so the default itself is what's asserted.
 - Bilingual Tamil/English strings and bilingual value cleaner
   (`அ / B` format) → `src/localization/*`, `src/utils/bilingual.ts`.
 
@@ -87,6 +96,14 @@ with the concrete places each was applied. Read together with `README.md`,
 - Fully offline calendar grid with per-cell decorations (Tamil day numbers,
   amavasai ●, pournami ○, festival dot, subha-muhurtham marker, event dots),
   monthly + annual views, month details list, legend rows.
+- **Month-at-a-glance composition** (`src/features/calendar/useMonthDetails.ts`
+  + `MonthDetails.tsx`): one parallel fetch grouping observances/festivals/
+  events into labeled sections; empty groups suppressed before rendering;
+  focus-triggered refetch via a signal prop for post-add-event freshness.
+- **Day-details top navigation**: prev/next day controls fixed above the
+  scroll content with the current Gregorian date centered, so orientation
+  survives any scroll depth; labeled Tamil-date and English(Gregorian)-date
+  rows in the hero; Paksha lives in the Panchangam card as the last row.
 - Accessible pressables (roles, labels) and minimum touch targets across
   components (`minTouchTarget`).
 
@@ -94,6 +111,10 @@ with the concrete places each was applied. Read together with `README.md`,
 - Jest suites per layer: pure-math engines, seed data correctness,
   repositories over fake DB, stores, localization parity, date utilities —
   currently 20 suites / 228 tests, all green.
+- **Bugs become guards**: every user-reported defect (year-overlay leak,
+  duplicated localization key, JSX duplication from partial replacements)
+  turns into a regression test or compiler-clean verification instead of a
+  workaround; the exact-date leak test is the canonical example.
 - Explicit exit-code check discipline (`tsc --noEmit` + full jest) after
   every substantive change; fix the cause, never weaken assertions.
 - In-repo docs (`README.md`, `docs/DATA_SOURCES.md`) updated whenever data

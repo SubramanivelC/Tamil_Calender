@@ -144,7 +144,7 @@ export default function FestivalsScreen() {
                   subtitle={f.isHoliday ? t('holiday') : null}
                   dateLabel={f.dateKey}
                   festivalDotColor
-                  onPress={() => router.push({ pathname: '/day-details', params: { date: f.dateKey } })}
+                  onPress={() => router.push({ pathname: '/(tabs)/calendar', params: { view: 'today', date: f.dateKey } })}
                 />
               ))}
             </View>
