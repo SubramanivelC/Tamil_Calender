@@ -436,8 +436,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconBtn: {
-    height: 40,
-    minWidth: 40,
+    height: 44,
+    minWidth: 44,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 4,

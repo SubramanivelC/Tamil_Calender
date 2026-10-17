@@ -52,7 +52,7 @@ export default function RootLayout() {
   // Pre-provider loading screen: plain View, because ThemedView requires
   // ThemeProvider context which is only mounted after init completes.
   if (!ready) {
-    return <View style={{ flex: 1, backgroundColor: '#FFFBF5' }} />;
+    return <View style={{ flex: 1, backgroundColor: '#FAF4E8' }} />;
   }
 
   return (

@@ -11,9 +11,9 @@ export const palette = {
   deepBurgundy: '#4B1724',
   mutedGold: '#C5A05A',
 
-  // Warm neutrals (light)
-  warmIvory: '#FFFBF5',
-  softBeige: '#F2EBE1',
+  // Warm neutrals (light) — clean cream scheme
+  warmIvory: '#FAF4E8',
+  softBeige: '#EFE6D5',
   paleRose: '#F5E8E9',
 
   // Text (light scheme)
@@ -48,7 +48,7 @@ export const lightColors = {
   gold: palette.mutedGold,
   goldSoft: 'rgba(197, 160, 90, 0.28)',
 
-  border: 'rgba(118, 37, 54, 0.14)',
+  border: 'rgba(88, 66, 40, 0.12)',
   divider: palette.dividerLight,
 
   today: palette.primaryMaroon,

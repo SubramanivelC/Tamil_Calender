@@ -7,6 +7,7 @@ import { ThemedText } from '@/components/ThemedText';
 import type { DayCell, Language, NumeralStyle } from '@/types';
 import { formatNumerals } from '@/utils/numerals';
 import { ThaliMark } from '@/components/calendar/ThaliMark';
+import { selectionTick } from '@/utils/haptics';
 import { spacing, minTouchTarget } from '@/theme/spacing';
 
 export interface CalendarGridProps {
@@ -51,7 +52,10 @@ function CalendarCell({
 
   return (
     <Pressable
-      onPress={() => onPress(cell.key)}
+      onPress={() => {
+        selectionTick();
+        onPress(cell.key);
+      }}
       accessibilityRole="button"
       accessibilityLabel={`${formatNumerals(String(cell.day), numerals)}${
         showTamil && cell.tamilDay !== null
@@ -65,6 +69,7 @@ function CalendarCell({
           style={[
             styles.cell,
             { borderRadius: theme.radius.sm },
+            pressed ? { transform: [{ scale: 0.97 }] } : null,
             today
               ? { backgroundColor: theme.colors.today }
               : selected
@@ -262,8 +267,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerText: {
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    // No textTransform/letterSpacing: Tamil has no uppercase, and the W3C
+    // Tamil layout note (ilreq-taml) warns fixed letter-spacing/clipping
+    // assumptions break Tamil glyphs with two-part vowel signs. Capitalized
+    // weekday labels suffice in English.
   },
   weekRow: {
     flexDirection: 'row',

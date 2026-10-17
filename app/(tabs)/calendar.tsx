@@ -21,6 +21,7 @@ import { TAMIL_MONTHS } from '@/data/mappings';
 import { AnnualCalendar } from '@/features/calendar/AnnualCalendar';
 import { tamilMonthsSpanningGregorianMonth } from '@/features/calendar/tamilMonthSpan';
 import { DayDetailsContent } from '@/features/daydetails/DayDetailsContent';
+import { selectionTick } from '@/utils/haptics';
 
 /** The three views of the Calendar tab. Daily detail content is the
     "Today" view, embedded so the bottom menu stays visible. */
@@ -269,10 +270,17 @@ function ViewToggle({
       {items.map((item) => (
         <Pressable
           key={item.key}
-          onPress={() => onChange(item.key)}
+          onPress={() => {
+            selectionTick();
+            onChange(item.key);
+          }}
           accessibilityRole="button"
           accessibilityState={{ selected: view === item.key }}
-          style={[styles.toggleBtn, view === item.key && { backgroundColor: colors.surface }]}
+          style={({ pressed }) => [
+            styles.toggleBtn,
+            view === item.key && { backgroundColor: colors.surface },
+            pressed ? { transform: [{ scale: 0.96 }] } : null,
+          ]}
         >
           <ThemedText variant="small" weight={view === item.key ? 'medium' : 'regular'}>
             {item.label}

@@ -44,7 +44,7 @@ export function Card({
       style={StyleSheet.flatten([
         {
           backgroundColor: theme.colors.surface,
-          borderRadius: theme.radius.md,
+          borderRadius: theme.radius.lg,
           borderWidth: StyleSheet.hairlineWidth,
           borderColor: theme.colors.border,
         },

@@ -3,7 +3,7 @@ import { lightTheme, darkTheme } from '../theme';
 describe('design system themes', () => {
   test('light theme uses required brand colors', () => {
     expect(lightTheme.colors.primary).toBe('#762536');
-    expect(lightTheme.colors.background).toBe('#FFFBF5');
+    expect(lightTheme.colors.background).toBe('#FAF4E8');
     expect(lightTheme.colors.text).toBe('#292524');
     expect(lightTheme.colors.textSecondary).toBe('#77716E');
   });

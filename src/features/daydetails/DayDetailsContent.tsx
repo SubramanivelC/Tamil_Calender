@@ -12,13 +12,15 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { useT } from '@/localization';
 import { cleanBilingualValue } from '@/utils/bilingual';
 import { useSettingsStore } from '@/store/settingsStore';
-import { useDayDetails } from '@/features/daydetails/useDayDetails';import { saveNote as saveNoteToDb } from '@/database/repositories/userDataRepo';
+import { useDayDetails } from '@/features/daydetails/useDayDetails';
+import { saveNote as saveNoteToDb } from '@/database/repositories/userDataRepo';
 import { toggleBookmark } from '@/database/repositories/userDataRepo';
 import { useRemindersStore } from '@/store/remindersStore';
 import { getEventsForDate, deleteEvent } from '@/database/repositories/eventsRepo';
 import type { UserEvent, ReminderDefinition, Language } from '@/types';
 import { DEFAULT_REMINDER_HHMM } from '@/data/constants';
-import { spacing } from '@/theme/spacing';
+import { spacing, radius } from '@/theme/spacing';
+import { selectionTick, lightTap, successTick } from '@/utils/haptics';
 import { formatTimeWithMeridiem } from '@/utils/numerals';
 import { localTodayKey, parseDateKey } from '@/utils/dates';
 import { gregorianMonthName } from '@/localization';
@@ -58,6 +60,9 @@ export function DayDetailsContent({
   const [noteText, setNoteText] = useState<string>('');
   const [noteLoadedFor, setNoteLoadedFor] = useState<string>('');
   const [bookmarked, setBookmarked] = useState<boolean>(false);
+  // The dense almanac rows (tithi…paksha) stay tucked behind an expander so
+  // the scannable time-band chips remain the visual focus.
+  const [fullPanchangamOpen, setFullPanchangamOpen] = useState(false);
 
   // Reset the note/bookmark fields when the loaded data changes date —
   // adjusted during render (guarded by noteLoadedFor) rather than inside an
@@ -116,6 +121,7 @@ export function DayDetailsContent({
   const onToggleBookmark = useCallback(async () => {
     const next = !bookmarked;
     setBookmarked(next);
+    if (next) successTick();
     await toggleBookmark(dateKey, next);
   }, [bookmarked, dateKey]);
 
@@ -150,14 +156,14 @@ export function DayDetailsContent({
   return (
     <View style={{ flex: 1 }}>
       <View style={styles.topBar}>
-        <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel={t('back')}>
+        <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel={t('back')} style={styles.topBarBtn}>
           <Ionicons name="arrow-back" size={22} color={colors.text} />
         </Pressable>
         <View style={styles.topBarActions}>
-          <Pressable onPress={onShare} accessibilityRole="button" accessibilityLabel={t('shareDetails')} hitSlop={8}>
+          <Pressable onPress={onShare} accessibilityRole="button" accessibilityLabel={t('shareDetails')} hitSlop={8} style={styles.topBarBtn}>
             <Ionicons name="share-outline" size={22} color={colors.text} />
           </Pressable>
-          <Pressable onPress={onToggleBookmark} accessibilityRole="button" accessibilityLabel={bookmarked ? t('bookmarked') : t('bookmark')} hitSlop={8}>
+          <Pressable onPress={onToggleBookmark} accessibilityRole="button" accessibilityLabel={bookmarked ? t('bookmarked') : t('bookmark')} hitSlop={8} style={styles.topBarBtn}>
             <Ionicons name={bookmarked ? 'bookmark' : 'bookmark-outline'} size={22} color={bookmarked ? colors.primary : colors.text} />
           </Pressable>
         </View>
@@ -167,7 +173,10 @@ export function DayDetailsContent({
           always visible without scrolling to the bottom. */}
       <View style={styles.dayNav}>
         <Pressable
-          onPress={() => onChangeDate(previousKey)}
+          onPress={() => {
+            lightTap();
+            onChangeDate(previousKey);
+          }}
           accessibilityRole="button"
           accessibilityLabel={t('previousDay')}
           style={[styles.dayNavBtn, { minHeight: 44, minWidth: 44, justifyContent: 'center' }]}
@@ -202,7 +211,10 @@ export function DayDetailsContent({
           </Pressable>
         </View>
         <Pressable
-          onPress={() => onChangeDate(nextKey)}
+          onPress={() => {
+            lightTap();
+            onChangeDate(nextKey);
+          }}
           accessibilityRole="button"
           accessibilityLabel={t('nextDay')}
           style={[styles.dayNavBtn, { minHeight: 44, minWidth: 44, justifyContent: 'center' }]}
@@ -242,27 +254,71 @@ export function DayDetailsContent({
           </View>
         </Card>
 
-        {/* Panchangam — sunrise/sunset first, then the Daivika/adi-daivika
-            printed-sheet order: Nalla Neram, Rahu, Yamagandam, Kuligai,
-            Tithi, Nakshatra, Yoga, Karana. */}
+        {/* Panchangam — redesigned for scanning: the four peak-attention
+            time bands as prominent chips first, then sunrise/moon events,
+            with the dense almanac rows (Tithi… Paksha) tucked behind a
+            "full panchangam" expander per Material 3 list hierarchy. */}
         <SectionHeader title={t('panchangamSummary')} />
         <Card style={{ padding: spacing.lg, marginBottom: spacing.xl }}>
+          <ThemedText variant="small" weight="medium" color="secondary" style={styles.groupLabel}>
+            {t('timeBands')}
+          </ThemedText>
+          <View style={styles.chipGrid}>
+            {(
+              [
+                [t('nallaNeram'), data.panchangam.record.nallaNeram, !verified],
+                [t('rahuKalam'), data.panchangam.record.rahuKalam, false],
+                [t('yamagandam'), data.panchangam.record.yamagandam, false],
+                [t('kuligai'), data.panchangam.record.kuligai, false],
+              ] as const
+            ).map(([label, value, approximate]) => (
+              <View key={label} style={[styles.chip, { backgroundColor: colors.surfaceMuted }]}>
+                <ThemedText variant="caption" color="secondary" numberOfLines={1}>
+                  {approximate ? `≈ ${label}` : label}
+                </ThemedText>
+                <ThemedText variant="body" weight="medium" style={styles.chipValue}>
+                  {value ? cleanBilingualValue(value, language) : '—'}
+                </ThemedText>
+              </View>
+            ))}
+          </View>
+
+          <View style={[styles.divider, { backgroundColor: colors.divider }]} />
+          <ThemedText variant="small" weight="medium" color="secondary" style={styles.groupLabel}>
+            {t('riseAndSet')}
+          </ThemedText>
           <TimeRow label={t('sunrise')} value={data.panchangam.record.sunrise} approximate={!verified} language={language} />
           <TimeRow label={t('sunset')} value={data.panchangam.record.sunset} approximate={!verified} language={language} />
-          <TimeRow label={t('nallaNeram')} value={data.panchangam.record.nallaNeram} approximate={!verified} language={language} />
-          <TimeRow label={t('rahuKalam')} value={data.panchangam.record.rahuKalam} language={language} />
-          <TimeRow label={t('yamagandam')} value={data.panchangam.record.yamagandam} language={language} />
-          <TimeRow label={t('kuligai')} value={data.panchangam.record.kuligai} language={language} />
-          <TimeRow label={t('tithi')} value={data.panchangam.record.tithi} language={language} />
-          <TimeRow label={t('nakshatra')} value={data.panchangam.record.nakshatra} language={language} />
-          <TimeRow label={t('yoga')} value={data.panchangam.record.yoga} language={language} />
-          <TimeRow label={t('karana')} value={data.panchangam.record.karana} language={language} />
-          <TimeRow label={t('soolam')} value={data.panchangam.record.soolam} language={language} />
-          <TimeRow label={t('parikaram')} value={data.panchangam.record.parikaram} language={language} />
           <TimeRow label={t('moonrise')} value={data.panchangam.record.moonrise} language={language} />
           <TimeRow label={t('moonset')} value={data.panchangam.record.moonset} language={language} />
-          {cleanedPaksha ? (
-            <TimeRow label={t('paksha')} value={cleanedPaksha} language={language} />
+
+          <Pressable
+            onPress={() => {
+              selectionTick();
+              setFullPanchangamOpen((v) => !v);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={fullPanchangamOpen ? t('hideFullPanchangam') : t('showFullPanchangam')}
+            accessibilityState={{ expanded: fullPanchangamOpen }}
+            style={styles.fullToggle}
+          >
+            <ThemedText variant="small" color="primary" weight="medium">
+              {fullPanchangamOpen ? t('hideFullPanchangam') : t('showFullPanchangam')}
+            </ThemedText>
+            <Ionicons name={fullPanchangamOpen ? 'chevron-up' : 'chevron-down'} size={16} color={colors.primary} />
+          </Pressable>
+          {fullPanchangamOpen ? (
+            <View>
+              <TimeRow label={t('tithi')} value={data.panchangam.record.tithi} language={language} />
+              <TimeRow label={t('nakshatra')} value={data.panchangam.record.nakshatra} language={language} />
+              <TimeRow label={t('yoga')} value={data.panchangam.record.yoga} language={language} />
+              <TimeRow label={t('karana')} value={data.panchangam.record.karana} language={language} />
+              <TimeRow label={t('soolam')} value={data.panchangam.record.soolam} language={language} />
+              <TimeRow label={t('parikaram')} value={data.panchangam.record.parikaram} language={language} />
+              {cleanedPaksha ? (
+                <TimeRow label={t('paksha')} value={cleanedPaksha} language={language} />
+              ) : null}
+            </View>
           ) : null}
         </Card>
 
@@ -406,6 +462,41 @@ const styles = StyleSheet.create({
   topBarActions: {
     flexDirection: 'row',
     gap: 20,
+  },
+  topBarBtn: {
+    height: 44,
+    minWidth: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  groupLabel: {
+    marginBottom: spacing.sm,
+  },
+  chipGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  chip: {
+    flexGrow: 1,
+    flexBasis: '47%',
+    borderRadius: radius.sm,
+    padding: spacing.md,
+    minHeight: 64,
+  },
+  chipValue: {
+    marginTop: 2,
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    marginVertical: spacing.md,
+  },
+  fullToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: spacing.xs,
+    minHeight: 44,
   },
   metaRow: {
     flexDirection: 'row',
