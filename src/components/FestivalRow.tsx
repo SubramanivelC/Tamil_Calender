@@ -73,7 +73,7 @@ export function FestivalRow({
       accessibilityLabel={`${title}, ${countdown ? `${countdown.label}, ${countdown.dateText}` : dateLabel}`}
       style={({ pressed }) => [
         styles.row,
-        { opacity: pressed ? 0.75 : 1 },
+        { opacity: pressed ? 0.8 : 1 },
       ]}
     >
       {dotColor ? <View style={[styles.dot, { backgroundColor: dotColor }]} /> : null}

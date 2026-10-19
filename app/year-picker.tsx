@@ -44,12 +44,29 @@ export default function YearPickerScreen() {
     [router, params.month]
   );
 
-  interface RenderProps {
-    index: number;
-  }
-
-  // Group headers computed on the fly (FlatList with section emulation).
-  let lastGroup: 'past' | 'current' | 'future' | null = null;
+  // Group headers precomputed once — mutating render-local state inside
+  // renderItem breaks render purity (headers could mis-render on re-renders
+  // after virtualization recalls previously-rendered rows).
+  const itemsWithHeaders = useMemo(() => {
+    const out: { year: number; group: 'past' | 'current' | 'future'; showHeader: boolean; groupTitle?: string }[] = [];
+    let lastGroup: 'past' | 'current' | 'future' | null = null;
+    for (const y of years) {
+      const showHeader = y.group !== lastGroup;
+      lastGroup = y.group;
+      out.push({
+        ...y,
+        showHeader,
+        groupTitle: showHeader
+          ? y.group === 'past'
+            ? t('previousYears')
+            : y.group === 'current'
+              ? t('currentYear')
+              : t('futureYears')
+          : undefined,
+      });
+    }
+    return out;
+  }, [years, t]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
@@ -73,22 +90,14 @@ export default function YearPickerScreen() {
       </View>
       <FlatList
         initialNumToRender={initialIndex + 12}
-        data={years}
+        data={itemsWithHeaders}
         keyExtractor={(item) => String(item.year)}
         initialScrollIndex={initialIndex}
         getItemLayout={(_, index) => ({ length: ROW_H, offset: ROW_H * index, index })}
         renderItem={({ item }) => {
-          const showHeader = item.group !== lastGroup;
-          lastGroup = item.group;
-          const groupTitle =
-            item.group === 'past'
-              ? t('previousYears')
-              : item.group === 'current'
-                ? t('currentYear')
-                : t('futureYears');
           return (
             <View>
-              {showHeader ? <SectionHeader title={groupTitle} /> : null}
+              {item.showHeader ? <SectionHeader title={item.groupTitle ?? ''} /> : null}
               <Pressable
                 onPress={() => {
                   setSelectedYear(item.year);
@@ -134,7 +143,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 999,
-    minHeight: 36,
+    minHeight: minTouchTarget,
     justifyContent: 'center',
   },
   yearRow: {

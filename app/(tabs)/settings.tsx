@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
   },
   linkBtn: {
     alignSelf: 'flex-start',
-    minHeight: 36,
+    minHeight: 44,
     justifyContent: 'center',
   },
 });

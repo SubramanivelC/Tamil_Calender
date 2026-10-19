@@ -12,7 +12,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { useT, gregorianMonthName } from '@/localization';
 import { useSettingsStore } from '@/store/settingsStore';
 import { getFestivalsForYear, type RawOccurrenceRow } from '@/database/repositories/festivalRepo';
-import { spacing } from '@/theme/spacing';
+import { spacing, minTouchTarget } from '@/theme/spacing';
 import { localTodayKey, parseDateKey, diffCalendarDays } from '@/utils/dates';
 import { formatNumerals } from '@/utils/numerals';
 import { categoryColorName } from '@/components/FestivalRow';
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(118,37,54,0.25)',
-    minHeight: 32,
+    minHeight: minTouchTarget,
     justifyContent: 'center',
   },
   yearNav: {

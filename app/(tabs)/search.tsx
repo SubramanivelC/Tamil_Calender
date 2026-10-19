@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 999,
-    minHeight: 32,
+    minHeight: minTouchTarget,
     justifyContent: 'center',
   },
   resultRow: {

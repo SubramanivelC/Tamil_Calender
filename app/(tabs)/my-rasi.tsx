@@ -462,7 +462,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   btn: {
-    minHeight: 42,
+    minHeight: 44,
     borderRadius: 10,
     paddingHorizontal: 16,
     paddingVertical: 10,

@@ -6,7 +6,7 @@ import { Card } from '@/components/ThemedView';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useT } from '@/localization';
 import { useSettingsStore } from '@/store/settingsStore';
-import { spacing } from '@/theme/spacing';
+import { spacing, minTouchTarget } from '@/theme/spacing';
 import { formatNumerals } from '@/utils/numerals';
 import { useMonthDetails, type MonthDetailEntry } from '@/features/calendar/useMonthDetails';
 
@@ -76,7 +76,7 @@ export function MonthDetails({
                   onPress={() => onSelectDate(row.dateKey)}
                   accessibilityRole="button"
                   accessibilityLabel={`${row.dateKey} ${row.nameEn ?? row.nameTa ?? g.title}`}
-                  style={({ pressed }) => [styles.row, pressed && { opacity: 0.7 }]}
+                  style={({ pressed }) => [styles.row, pressed && { opacity: 0.8 }]}
                 >
                   <View style={styles.dayWrap}>
                     <ThemedText
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
     paddingVertical: 4,
-    minHeight: 36,
+    minHeight: minTouchTarget,
     paddingHorizontal: 4,
     borderRadius: 8,
   },

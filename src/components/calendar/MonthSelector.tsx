@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 999,
     marginRight: spacing.sm,
-    minHeight: 30,
+    minHeight: 36,
     justifyContent: 'center',
   },
 });

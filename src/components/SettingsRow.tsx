@@ -112,7 +112,9 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     paddingHorizontal: 14,
     borderRadius: 999,
-    minHeight: minTouchTarget / 2 + 10,
+    // Rows of small pills are the Settings screen's primary controls —
+    // keep them on the full minimum touch target.
+    minHeight: minTouchTarget,
     justifyContent: 'center',
   },
   toggleRow: {
