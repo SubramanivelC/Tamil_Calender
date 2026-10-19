@@ -3,24 +3,20 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useT } from '@/localization';
-import { useSettingsStore } from '@/store/settingsStore';
 
 export default function TabsLayout() {
   const colors = useThemeColors().colors;
   const t = useT();
-  const language = useSettingsStore((s) => s.language);
 
   const tabs: {
-    name: 'index' | 'calendar' | 'festivals' | 'search' | 'my-rasi' | 'settings';
+    name: 'index' | 'calendar' | 'festivals' | 'settings';
     titleKey: string;
     icon: keyof typeof Ionicons.glyphMap;
     focusedIcon: keyof typeof Ionicons.glyphMap;
   }[] = [
     { name: 'index', titleKey: 'tabHome', icon: 'home-outline', focusedIcon: 'home' },
     { name: 'calendar', titleKey: 'tabCalendar', icon: 'calendar-outline', focusedIcon: 'calendar' },
-    { name: 'my-rasi', titleKey: 'tabMyRasi', icon: 'moon-outline', focusedIcon: 'moon' },
     { name: 'festivals', titleKey: 'tabFestivals', icon: 'star-outline', focusedIcon: 'star' },
-    { name: 'search', titleKey: 'tabSearch', icon: 'search-outline', focusedIcon: 'search' },
     { name: 'settings', titleKey: 'tabSettings', icon: 'settings-outline', focusedIcon: 'settings' },
   ];
 
@@ -62,6 +58,18 @@ export default function TabsLayout() {
           /day-details because the (tabs) group is stripped. */}
       <Tabs.Screen
         name="day-details"
+        options={{ href: null }}
+      />
+      {/* My Rasi screen stays routable (deep links) but out of the bottom
+          menu; its card lives in the Calendar tab's Today view now. */}
+      <Tabs.Screen
+        name="my-rasi"
+        options={{ href: null }}
+      />
+      {/* Search moved out of the bottom menu — now opened from Settings
+          (and still routable from the Home search icon / quick action). */}
+      <Tabs.Screen
+        name="search"
         options={{ href: null }}
       />
     </Tabs>

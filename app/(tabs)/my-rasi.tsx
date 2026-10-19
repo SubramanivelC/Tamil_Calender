@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { ScrollView, View, StyleSheet, Pressable, Modal, Platform } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
@@ -273,6 +274,21 @@ export default function MyRasiScreen() {
         {/* Your rasi + today's catam for it */}
         {selectedRasi !== null && mine ? (
           <Card style={{ padding: spacing.lg, marginBottom: spacing.xl }}>
+            {/* Chandrashtama is the day's most consequential signal — give it
+                a banner, not just a tinted row in the 12-rasi list below. */}
+            {mine.category === 'chandrashtama' ? (
+              <View style={[styles.chandraBanner, { backgroundColor: 'rgba(179, 38, 30, 0.08)' }]}>
+                <Ionicons name="warning" size={18} color={colors.error} />
+                <View style={{ flex: 1 }}>
+                  <ThemedText variant="small" weight="medium" color="error">
+                    {t('chandrashtamaTitle')}
+                  </ThemedText>
+                  <ThemedText variant="caption" color="secondary">
+                    {t('chandrashtamaMessage')}
+                  </ThemedText>
+                </View>
+              </View>
+            ) : null}
             <ThemedText variant="caption" color="secondary">
               {t('janmaRasi')} · {cleanBilingualValue(RASI_NAMES[selectedRasi] ?? '', language)}
             </ThemedText>
@@ -402,6 +418,14 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     marginBottom: spacing.xl,
     gap: 8,
+  },
+  chandraBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    padding: spacing.md,
+    borderRadius: 10,
+    marginBottom: spacing.sm,
   },
   birthHeading: {
     marginTop: spacing.md,

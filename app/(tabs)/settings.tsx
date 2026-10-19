@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { ScrollView, View, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { ThemedText } from '@/components/ThemedText';
@@ -18,7 +19,7 @@ import { cleanBilingualValue } from '@/utils/bilingual';
 import type { ThemeMode } from '@/theme/theme';
 import type { FontScale } from '@/theme/typography';
 import { fontScaleFactors } from '@/theme/typography';
-import { spacing } from '@/theme/spacing';
+import { spacing, radius } from '@/theme/spacing';
 import {
   DATASET_START_YEAR,
   DATASET_END_YEAR,
@@ -30,15 +31,19 @@ import { DATASET_VERSION } from '@/data/seedData';
 
 export default function SettingsScreen() {
   const t = useT();
+  const router = useRouter();
   const { colors } = useThemeColors();
   const settings = useSettingsStore();
   const language = settings.language;
 
   const [datasetVersion, setDatasetVersion] = useState<string>(DATASET_VERSION);
   const [notifPermission, setNotifPermission] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
-  const [rasiMode, setRasiMode] = useState<'rasi' | 'star'>(
-    useSettingsStore.getState().rasiPalamBirthStar !== null ? 'star' : 'rasi'
-  );
+  // Picker mode follows the saved shape after the persisted store re-hydrates
+  // mid-session — derived each render from the store, with the user's
+  // in-session choice taking precedence (no setState-in-effect cascade).
+  const [userRasiMode, setUserRasiMode] = useState<'rasi' | 'star' | null>(null);
+  const rasiMode: 'rasi' | 'star' =
+    userRasiMode ?? (settings.rasiPalamBirthStar !== null ? 'star' : 'rasi');
 
   useEffect(() => {
     void (async () => {
@@ -74,12 +79,6 @@ export default function SettingsScreen() {
     [settings]
   );
 
-  useEffect(() => {
-    // After the persisted store re-hydrates mid-session, keep the picker
-    // mode in sync with what was actually saved.
-    setRasiMode(settings.rasiPalamBirthStar !== null ? 'star' : 'rasi');
-  }, [settings.rasiPalamBirthStar]);
-
   const fontScaleOptions: { value: number; label: string }[] = [
     { value: fontScaleFactors.small, label: t('fontSmall') },
     { value: fontScaleFactors.default, label: t('fontDefault') },
@@ -94,7 +93,7 @@ export default function SettingsScreen() {
           {t('tabSettings')}
         </ThemedText>
 
-        <SectionHeader title={t('appearance')} />
+        <SectionHeader title={t('appearance')} icon="color-palette-outline" />
         <ThemedView variant="surface" style={styles.group}>
           <SettingsOptionRow<ThemeMode>
             label={t('systemTheme')}
@@ -114,7 +113,7 @@ export default function SettingsScreen() {
           />
         </ThemedView>
 
-        <SectionHeader title={t('language')} />
+        <SectionHeader title={t('language')} icon="language-outline" />
         <ThemedView variant="surface" style={styles.group}>
           <SettingsOptionRow<'ta' | 'en'>
             label=""
@@ -136,7 +135,7 @@ export default function SettingsScreen() {
           />
         </ThemedView>
 
-        <SectionHeader title={t('rasiPalam')} />
+        <SectionHeader title={t('rasiPalam')} icon="moon-outline" />
         <ThemedView variant="surface" style={styles.group}>
           <SettingsOptionRow<'rasi' | 'star'>
             label={t('rasiSelectMode')}
@@ -145,7 +144,7 @@ export default function SettingsScreen() {
               { value: 'star', label: t('byBirthStar') },
             ]}
             value={rasiMode}
-            onChange={setRasiMode}
+            onChange={setUserRasiMode}
           />
           {rasiMode === 'rasi' ? (
             <SettingsOptionRow<number>
@@ -213,7 +212,7 @@ export default function SettingsScreen() {
           ) : null}
         </ThemedView>
 
-        <SectionHeader title={t('calendar')} />
+        <SectionHeader title={t('calendar')} icon="calendar-outline" />
         <ThemedView variant="surface" style={styles.group}>
           <SettingsOptionRow<'monthly' | 'annual'>
             label={t('defaultView')}
@@ -243,7 +242,7 @@ export default function SettingsScreen() {
           />
         </ThemedView>
 
-        <SectionHeader title={t('notifications')} />
+        <SectionHeader title={t('notifications')} icon="notifications-outline" />
         <ThemedView variant="surface" style={styles.group}>
           <SettingsToggleRow
             label={t('festivalReminders')}
@@ -276,7 +275,23 @@ export default function SettingsScreen() {
           ) : null}
         </ThemedView>
 
-        <SectionHeader title={t('about')} />
+        {/* Search — moved out of the bottom menu; opened from here. */}
+        <SectionHeader title={t('tabSearch')} icon="search-outline" />
+        <ThemedView variant="surface" style={styles.group}>
+          <Pressable
+            onPress={() => router.push('/(tabs)/search')}
+            accessibilityRole="button"
+            accessibilityLabel={t('tabSearch')}
+            style={({ pressed }) => [styles.searchRow, pressed ? { opacity: 0.8 } : null]}
+          >
+            <ThemedText variant="body">{t('tabSearch')}</ThemedText>
+            <ThemedText variant="small" color="secondary">
+              {t('searchPlaceholder').replace('…', '')} →
+            </ThemedText>
+          </Pressable>
+        </ThemedView>
+
+        <SectionHeader title={t('about')} icon="information-circle-outline" />
         <ThemedView variant="surface" style={styles.group}>
           <TimeRow label={t('appVersion')} value={String(Constants.expoConfig?.version ?? '1.0.0')} language={language} />
           <TimeRow label={t('datasetVersion')} value={datasetVersion} language={language} />
@@ -288,10 +303,17 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   group: {
-    borderRadius: 14,
+    borderRadius: radius.lg,
     padding: spacing.lg,
     marginBottom: spacing.xl,
     gap: 4,
+  },
+  searchRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    minHeight: 44,
   },
   linkBtn: {
     alignSelf: 'flex-start',

@@ -6,24 +6,26 @@ import { Card } from '@/components/ThemedView';
 import { SectionHeader } from '@/components/SectionHeader';
 import { TimeRow } from '@/components/TimeRow';
 import { FestivalRow } from '@/components/FestivalRow';
-import { LoadingView } from '@/components/LoadingView';
+import { SkeletonDay } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useT } from '@/localization';
+import { useT, gregorianMonthName } from '@/localization';
 import { cleanBilingualValue } from '@/utils/bilingual';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useDayDetails } from '@/features/daydetails/useDayDetails';
-import { saveNote as saveNoteToDb } from '@/database/repositories/userDataRepo';
-import { toggleBookmark } from '@/database/repositories/userDataRepo';
+import { AllRasisPalamCard } from '@/features/rasiPalam/AllRasisPalamCard';
+import { LiveTimeBanner } from '@/features/daydetails/LiveTimeBanner';
+import { saveNote as saveNoteToDb, toggleBookmark } from '@/database/repositories/userDataRepo';
 import { useRemindersStore } from '@/store/remindersStore';
 import { getEventsForDate, deleteEvent } from '@/database/repositories/eventsRepo';
 import type { UserEvent, ReminderDefinition, Language } from '@/types';
 import { DEFAULT_REMINDER_HHMM } from '@/data/constants';
 import { spacing, radius } from '@/theme/spacing';
-import { selectionTick, lightTap, successTick } from '@/utils/haptics';
 import { formatTimeWithMeridiem } from '@/utils/numerals';
 import { localTodayKey, parseDateKey } from '@/utils/dates';
-import { gregorianMonthName } from '@/localization';
+
+import { selectionTick, lightTap, successTick } from '@/utils/haptics';
+
 
 /**
  * Full single-day detail content — the "Today View" of the Calendar tab.
@@ -139,7 +141,9 @@ export function DayDetailsContent({
     });
   }, [dateKey, data, t]);
 
-  if (loading) return <LoadingView label={t('loading')} />;
+  // Placeholder-shaped loading: hints at the coming layout instead of a
+  // blank spinner (Apple HIG loading guidance).
+  if (loading) return <SkeletonDay />;
   if (!data) {
     return (
       <EmptyState
@@ -254,6 +258,14 @@ export function DayDetailsContent({
           </View>
         </Card>
 
+        {/* Live band banner — today only; shows what time band is running
+            now or how far away the next one is (refreshes every 30s). */}
+        {isToday ? (
+          <View style={{ marginBottom: spacing.xl }}>
+            <LiveTimeBanner record={data.panchangam.record} />
+          </View>
+        ) : null}
+
         {/* Panchangam — redesigned for scanning: the four peak-attention
             time bands as prominent chips first, then sunrise/moon events,
             with the dense almanac rows (Tithi… Paksha) tucked behind a
@@ -322,6 +334,11 @@ export function DayDetailsContent({
           ) : null}
         </Card>
 
+        {/* Rasi Palan for all 12 rasis — the moon transits every rasi once
+            a month, so each row is that rasi's own day forecast; the row
+            for the user's rasi (Settings) is highlighted. */}
+        <AllRasisPalamCard dateKey={dateKey} />
+
         {/* Festivals & observances */}
         <SectionHeader title={t('festivalsObservances')} />
         <View style={{ marginBottom: spacing.xl }}>
@@ -330,15 +347,17 @@ export function DayDetailsContent({
               key={f.id}
               title={language === 'ta' ? f.nameTa : f.nameEn}
               subtitle={f.isHoliday ? t('holiday') : null}
-              dateLabel={dateKey}
-              festivalDotColor
+              // Day-first screen: every row is on the same date, so no date
+              // column (and no countdown) here.
+              dateLabel={''}
+              category={f.category}
             />
           ))}
           {data.observances.map((o) => (
             <FestivalRow
               key={o.kind}
               title={language === 'ta' ? o.nameTa : o.nameEn}
-              dateLabel={dateKey}
+              dateLabel={''}
             />
           ))}
           {data.festivals.length === 0 && data.observances.length === 0 ? (

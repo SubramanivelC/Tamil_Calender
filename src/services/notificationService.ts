@@ -31,7 +31,7 @@ export async function ensureAndroidChannel(): Promise<void> {
       lightColor: '#762536',
     });
     await Notifications.setNotificationChannelAsync('rasi-palam', {
-      name: 'ராசி பலம் / Rasi palam',
+      name: 'ராசி பலன் / Rasi palan',
       importance: Notifications.AndroidImportance.DEFAULT,
     });
   }
@@ -163,9 +163,9 @@ export async function scheduleDailyPalam(
       identifier: DAILY_PALAM_NOTIFICATION_ID,
       content: {
         title: rasiName
-          ? `ராசி பலம் — ${rasiName} / Rasi palam — ${rasiName}`
-          : 'ராசி பலம் / Rasi palam',
-        body: 'இன்றைய சந்திரகோச்சாரப் பலன் தயார் — திறந்து பாருங்கள் / Today\'s daily palam is ready — open the app.',
+          ? `ராசி பலன் — ${rasiName} / Rasi palan — ${rasiName}`
+          : 'ராசி பலன் / Rasi palan',
+        body: 'இன்றைய சந்திரகோச்சாரப் பலன் தயார் — திறந்து பாருங்கள் / Today\'s daily palan is ready — open the app.',
         sound: 'default',
       },
       trigger,

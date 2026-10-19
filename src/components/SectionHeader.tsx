@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Pressable, StyleSheet, AccessibilityRole } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from './ThemedText';
 import { useTheme } from '@/theme/ThemeProvider';
 
@@ -7,12 +8,17 @@ interface SectionHeaderProps {
   title: string;
   actionLabel?: string;
   onAction?: () => void;
+  /** Optional leading Ionicon — visually groups the section it labels. */
+  icon?: keyof typeof Ionicons.glyphMap;
 }
 
-export function SectionHeader({ title, actionLabel, onAction }: SectionHeaderProps) {
+export function SectionHeader({ title, actionLabel, onAction, icon }: SectionHeaderProps) {
   const theme = useTheme();
   return (
     <View style={styles.row}>
+      {icon ? (
+        <Ionicons name={icon} size={18} color={theme.colors.primary} style={styles.icon} />
+      ) : null}
       <ThemedText
         variant="h4"
         weight="bold"
@@ -45,6 +51,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
+  },
+  icon: {
+    marginRight: 6,
   },
   // Titles like "பண்டிகைகள் மற்றும் நோன்புகள்" shrink/wrap instead of pushing
   // the action link off-screen on narrow devices.

@@ -6,13 +6,14 @@ import { ThemedText } from '@/components/ThemedText';
 import { SectionHeader } from '@/components/SectionHeader';
 import { FestivalRow } from '@/components/FestivalRow';
 import { EmptyState } from '@/components/EmptyState';
-import { LoadingView } from '@/components/LoadingView';
+import { SkeletonList } from '@/components/Skeleton';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useT, gregorianMonthName } from '@/localization';
 import { useSettingsStore } from '@/store/settingsStore';
 import { getFestivalsForYear, type RawOccurrenceRow } from '@/database/repositories/festivalRepo';
 import { spacing } from '@/theme/spacing';
 import { localTodayKey, parseDateKey, diffCalendarDays } from '@/utils/dates';
+import { categoryColorName } from '@/components/FestivalRow';
 import type { FestivalCategory } from '@/types';
 
 const CATEGORIES: (FestivalCategory | 'all')[] = [
@@ -123,10 +124,29 @@ export default function FestivalsScreen() {
             </ThemedText>
           </Pressable>
         </View>
+        {/* Category color legend — the dots on the rows mean these. */}
+        <View style={styles.legendRow}>
+          {(
+            [
+              ['tamil', 'categoryTamil'],
+              ['hindu', 'categoryHindu'],
+              ['national', 'categoryNational'],
+              ['tamilnadu', 'categoryTamilNadu'],
+              ['observance', 'categoryObservance'],
+            ] as const
+          ).map(([cat, labelKey]) => (
+            <View key={cat} style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: colors[categoryColorName[cat]] }]} />
+              <ThemedText variant="caption" color="secondary" numberOfLines={1}>
+                {t(labelKey)}
+              </ThemedText>
+            </View>
+          ))}
+        </View>
       </View>
       <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxxl }}>
         {loading ? (
-          <LoadingView />
+          <SkeletonList rows={8} />
         ) : grouped.length === 0 ? (
           <EmptyState
             icon="star-outline"
@@ -143,7 +163,7 @@ export default function FestivalsScreen() {
                   title={language === 'ta' ? f.nameTa : f.nameEn}
                   subtitle={f.isHoliday ? t('holiday') : null}
                   dateLabel={f.dateKey}
-                  festivalDotColor
+                  category={f.category}
                   onPress={() => router.push({ pathname: '/(tabs)/calendar', params: { view: 'today', date: f.dateKey } })}
                 />
               ))}
@@ -161,6 +181,22 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
     marginTop: spacing.md,
+  },
+  legendRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginTop: spacing.sm,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  legendDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
   },
   catPill: {
     paddingHorizontal: 12,

@@ -68,6 +68,17 @@ export default function SearchScreen() {
     }
   };
 
+  // Kind-specific result icons so rows are recognizable before reading.
+  const kindIcon = (r: SearchResult): keyof typeof Ionicons.glyphMap => {
+    switch (r.kind) {
+      case 'festival': return 'star-outline';
+      case 'observance': return 'moon-outline';
+      case 'note': return 'document-text-outline';
+      case 'tamil_month': return 'calendar-outline';
+      case 'date': return 'calendar-outline';
+    }
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
       <View style={styles.searchBarWrap}>
@@ -139,17 +150,22 @@ export default function SearchScreen() {
             accessibilityLabel={`${kindLabel(item)}: ${item.title}`}
             style={({ pressed }) => [styles.resultRow, { opacity: pressed ? 0.75 : 1 }]}
           >
-            <ThemedText variant="caption" color="secondary">
-              {kindLabel(item)}
-            </ThemedText>
-            <ThemedText variant="body" weight="medium" numberOfLines={2}>
-              {item.title}
-            </ThemedText>
-            {item.subtitle ? (
-              <ThemedText variant="small" color="secondary" numberOfLines={1}>
-                {item.subtitle}
+            <View style={[styles.resultIcon, { backgroundColor: colors.surfaceMuted }]}>
+              <Ionicons name={kindIcon(item)} size={16} color={colors.primary} />
+            </View>
+            <View style={styles.resultText}>
+              <ThemedText variant="caption" color="secondary">
+                {kindLabel(item)}
               </ThemedText>
-            ) : null}
+              <ThemedText variant="body" weight="medium" numberOfLines={2}>
+                {item.title}
+              </ThemedText>
+              {item.subtitle ? (
+                <ThemedText variant="small" color="secondary" numberOfLines={1}>
+                  {item.subtitle}
+                </ThemedText>
+              ) : null}
+            </View>
           </Pressable>
         )}
         ListEmptyComponent={
@@ -215,5 +231,18 @@ const styles = StyleSheet.create({
   resultRow: {
     paddingVertical: spacing.md,
     minHeight: minTouchTarget,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  resultIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  resultText: {
+    flex: 1,
   },
 });

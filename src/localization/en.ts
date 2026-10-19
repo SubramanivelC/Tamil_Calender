@@ -16,6 +16,14 @@ export const enDict = {
 
   // Home
   today: 'Today',
+  tomorrow: 'Tomorrow',
+  inNDays: 'In {n} days',
+  chandrashtamaTitle: 'Chandrashtama today',
+  chandrashtamaMessage: 'The moon is transiting your 8th rasi — avoid new beginnings; extra care today.',
+  bannerNowUntil: '{band} now — until {time}',
+  bannerStartsIn: '{band} in {dur} — at {time}',
+  durHm: '{h}h {m}m',
+  durMin: '{m}m',
   gregorianDate: 'Gregorian date',
   tamilDate: 'Tamil date',
   tamilMonthYear: 'Tamil month / year',
@@ -101,7 +109,8 @@ export const enDict = {
   festival: 'Festival',
 
   // Rasi palam
-  rasiPalam: 'Rasi Palam',
+  rasiPalam: 'Rasi Palan',
+  rasiPalamPrompt: "Choose your rasi (moon sign) to see today's Rasi Palan",
   rasiSelectMode: 'Rasi selection',
   byRasiName: 'By rasi name',
   selectYourRasi: 'Your rasi',
@@ -109,13 +118,13 @@ export const enDict = {
   birthStar: 'Birth star',
   birthPada: 'Star pada (quarter)',
   janmaRasi: 'Your moon sign',
-  dailyPalamNotification: 'Daily palam notification',
+  dailyPalamNotification: 'Daily palan notification',
   dailyPalamTime: 'Notification time',
   moonTransitRow: 'Moon transit',
   transitFromRasi: '{n}th from your rasi',
   moreDetails: 'More details',
-  tabMyRasi: 'My Rasi Palam',
-  selectRasiPalam: 'Select Rasi Palam',
+  tabMyRasi: 'My Rasi Palan',
+  selectRasiPalam: 'Select Rasi Palan',
   findByBirth: 'Find your rasi by birth',
   birthDate: 'Date of birth',
   birthTime: 'Time of birth (24-hour)',
@@ -126,7 +135,7 @@ export const enDict = {
   computeRasi: 'Find my rasi',
   yourJanmaRasi: 'Your janma rasi',
   useThisRasi: 'Use this rasi',
-  allRasisPalam: "Today's palam for all rasis",
+  allRasisPalam: "Today's palan for all rasis",
   allRasisPalamHint: 'The moon visits every rasi this month; each row is that rasi\'s own day forecast from its moon transit.',
 
   // Search

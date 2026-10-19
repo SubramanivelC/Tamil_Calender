@@ -25,22 +25,45 @@ presented as approximate (≈) in the UI rather than as fact.
 Node/ICU's `Intl.DateTimeFormat` does not support the `ca=tamil` calendar and
 **silently falls back to Gregorian**, which would fabricate Tamil dates with no
 error. The conversion engine
-(`src/services/tamilCalendarService.ts`) therefore uses documented,
-table-driven month windows anchored on the verified facts above:
+(`src/services/tamilCalendarService.ts`) therefore computes month boundaries
+**astronomically**: the solar ingress (sankranti) instant at which the
+sidereal sun enters each rasi is found with the app's ephemeris
+(`panchangamAstro.ts`, truncated Meeus sun + linear Lahiri ayanamsa) and the
+ingress is mapped to a calendar day in Chennai time (IST = UTC+5:30) using
+the printed-calendar convention: sankranti before 13:00 IST starts the month
+that day, at/after 13:00 IST the next day. The 13:00 cutoff is calibrated
+against published Thirukanitha calendars (Prokerala/ClickAstro Chennai,
+Drik Panchang); both boundary sides are locked by regression tests, together
+with the full 2026 month-start set, Puthandu 2024-2026 and Thai 1 2024-2027
+anchors (`src/utils/__tests__/tamilCalendarService.test.ts`). Results are
+cached per navigated year, so day conversions stay cheap.
 
-| Tamil month | 1 falls ~on | Tamil month | 1 falls ~on |
-|---|---|---|---|
-| Chithirai | 14 Apr | Aippasi | 17 Oct |
-| Vaikasi | 15 May | Karthigai | 16 Nov |
-| Aani | 15 Jun | Margazhi | 16 Dec |
-| Aadi | 16 Jul | Thai | 14 Jan |
-| Aavani | 17 Aug | Masi | 13 Feb |
-| Purattasi | 17 Sep | Panguni | 15 Mar |
+**Printed daily-sheet (Vakya tradition) divergence**: Vakya panchangam
+sankranti times used by printed daily sheets can differ from true-time
+computation by hours (documented by Drik Panchang). In verified cases the
+printed month start is pinned by `PRINTED_MONTH_STARTS` overrides in the
+engine, transcribed from published calendars: 2024 Masi 1 = Feb 13,
+2026 Aavani 1 = Aug 18, 2026 Purattasi 1 = Sep 18 (so Oct 17 2026 =
+Purattasi 30, matching printed sheets), 2027 Aavani 1 = Aug 17. All other
+published month starts (full 2025 set incl. Aavani Aug 17 / Aippasi Oct 18,
+Thai 1 = Jan 14) are already reproduced by the computed rule and locked by
+the regression tests.
 
-Because the real solar calendar drifts ±1 day around Sankranti each year,
-**day-level results at month boundaries are marked `approximate: true`** and the
-UI renders them with an ≈ prefix. Month-level and New-Year/Pongal anchors are
-exact.
+Verified published anchors reproduced by the engine (Chennai):
+
+| Anchor | Verified value |
+|---|---|
+| Puthandu / Chithirai 1 | Apr 14 2024, 2025, 2026 |
+| Thai Pongal / Thai 1 | Jan 14 2025, Jan 15 2026, Jan 15 2027 |
+| Aippasi 1 | Oct 17 2024 (rule-computed, not printed-verified), Oct 18 2025, Oct 18 2026 |
+| Aani 1 | Jun 15 2026 (Mithuna sankranti 12:49 IST same day) |
+| Aadi 1 | Jul 17 2026 (Kataka sankranti 23:27 IST → next day) |
+
+The 1900–2100 runtime range is covered by the ephemeris itself; outside the
+printed-verified set the engine follows the Drik Thiru Ganita convention
+exactly. Sankrantis landing within minutes of the 13:00 cutoff are the
+engine's residual risk window — the published boundary cases bracket it, and
+the printed-sheet override layer covers the verified Vakya divergences.
 
 ## Paksha, Amavasai, Pournami
 

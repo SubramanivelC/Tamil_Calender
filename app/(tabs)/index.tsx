@@ -1,12 +1,11 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, View, Pressable, useWindowDimensions } from 'react-native';
+import { ScrollView, StyleSheet, View, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView, Card } from '@/components/ThemedView';
+import { Card } from '@/components/ThemedView';
 import { SectionHeader } from '@/components/SectionHeader';
-import { TimeRow } from '@/components/TimeRow';
 import { FestivalRow } from '@/components/FestivalRow';
 import { CalendarGrid } from '@/components/calendar/CalendarGrid';
 import { MonthSelector } from '@/components/calendar/MonthSelector';
@@ -18,8 +17,8 @@ import type { FestivalOccurrence } from '@/types';
 import { tamilMonthsSpanningGregorianMonth } from '@/features/calendar/tamilMonthSpan';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useHomeData, type HomeData } from '@/features/home/useHomeData';
-import { useRasiPalam } from '@/features/rasiPalam/useRasiPalam';
-import { cleanBilingualValue } from '@/utils/bilingual';
+import { TimeRow } from '@/components/TimeRow';
+import { RasiPalamCard } from '@/features/rasiPalam/RasiPalamCard';
 import { spacing } from '@/theme/spacing';
 import { localTodayKey, parseDateKey } from '@/utils/dates';
 
@@ -31,7 +30,6 @@ export default function HomeScreen() {
   const language = useSettingsStore((s) => s.language);
   const firstDayOfWeek = useSettingsStore((s) => s.firstDayOfWeek);
   const todayKey = useMemo(() => localTodayKey(), []);
-  const todayParts = useMemo(() => parseDateKey(todayKey), [todayKey]);
 
 
   const [selectedKey, setSelectedKey] = useState<string>(todayKey);
@@ -101,43 +99,125 @@ export default function HomeScreen() {
         <View style={{ paddingHorizontal: spacing.lg }}>
           {data ? (
             <>
-              <SectionHeader title={t('panchangamSummary')} />
+              {/* Full panchangam for the selected date: lunar fields,
+                  rise/set times, good/inauspicious time bands and soolam —
+                  the same detail set as the Day details screen. */}
+              <SectionHeader title={t('panchangamSummary')} icon="sunny-outline" />
               <Card style={{ padding: spacing.lg, marginBottom: spacing.xl }}>
-              {/* Sunrise/sunset first, then the Daivika/adi-daivika order
-                  used across the printed sheet. */}
-              <TimeRow label={t('sunrise')} value={data.selectedPanchang.sunrise} approximate={!data.selectedVerified} language={language} />
-              <TimeRow label={t('sunset')} value={data.selectedPanchang.sunset} approximate={!data.selectedVerified} language={language} />
-              <TimeRow label={t('nallaNeram')} value={data.selectedPanchang.nallaNeram} approximate={!data.selectedVerified} language={language} />
-              <TimeRow label={t('rahuKalam')} value={data.selectedPanchang.rahuKalam} language={language} />
-              <TimeRow label={t('yamagandam')} value={data.selectedPanchang.yamagandam} language={language} />
-              <TimeRow label={t('kuligai')} value={data.selectedPanchang.kuligai} language={language} />
-              <TimeRow label={t('tithi')} value={data.selectedPanchang.tithi} language={language} />
-              <TimeRow label={t('nakshatra')} value={data.selectedPanchang.nakshatra} language={language} />
-              <TimeRow label={t('yoga')} value={data.selectedPanchang.yoga} language={language} />
-              <TimeRow label={t('karana')} value={data.selectedPanchang.karana} language={language} />
-              <TimeRow label={t('soolam')} value={data.selectedPanchang.soolam} language={language} />
-              <TimeRow label={t('parikaram')} value={data.selectedPanchang.parikaram} language={language} />
-              <FestivalsInline
-                t={t}
-                language={language}
-                festivals={data.dayFestivals}
-                observances={data.dayObservances}
-              />
-              <ThemedText variant="caption" color="secondary" style={{ marginTop: spacing.md }}>
-                {t('doubleTapHint')}
-              </ThemedText>
-              <Pressable onPress={() => router.push({ pathname: '/(tabs)/calendar', params: { view: 'today', date: selectedKey } })}>
-                <View style={{ alignSelf: 'flex-end', marginTop: spacing.md }}>
-                  <ThemedText variant="small" color="primary" weight="medium">
-                    {t('viewDetails')} →
+                <TimeRow
+                  key="tithi"
+                  label={t('tithi')}
+                  value={data.selectedPanchang.tithi}
+                  language={language as 'ta' | 'en'}
+                />
+                <TimeRow
+                  key="nakshatra"
+                  label={t('nakshatra')}
+                  value={data.selectedPanchang.nakshatra}
+                  language={language as 'ta' | 'en'}
+                />
+                <TimeRow
+                  key="yoga"
+                  label={t('yoga')}
+                  value={data.selectedPanchang.yoga}
+                  language={language as 'ta' | 'en'}
+                />
+                <TimeRow
+                  key="karana"
+                  label={t('karana')}
+                  value={data.selectedPanchang.karana}
+                  language={language as 'ta' | 'en'}
+                />
+                <TimeRow
+                  label={t('paksha')}
+                  value={data.selectedPanchang.paksha}
+                  language={language as 'ta' | 'en'}
+                />
+                <View style={styles.summaryDivider} />
+                <TimeRow
+                  label={t('sunrise')}
+                  value={data.selectedPanchang.sunrise}
+                  approximate={!data.selectedVerified}
+                  language={language as 'ta' | 'en'}
+                />
+                <TimeRow
+                  label={t('sunset')}
+                  value={data.selectedPanchang.sunset}
+                  approximate={!data.selectedVerified}
+                  language={language as 'ta' | 'en'}
+                />
+                <TimeRow
+                  label={t('moonrise')}
+                  value={data.selectedPanchang.moonrise}
+                  language={language as 'ta' | 'en'}
+                />
+                <TimeRow
+                  label={t('moonset')}
+                  value={data.selectedPanchang.moonset}
+                  language={language as 'ta' | 'en'}
+                />
+                <View style={styles.summaryDivider} />
+                <TimeRow
+                  label={t('nallaNeram')}
+                  value={data.selectedPanchang.nallaNeram}
+                  approximate={!data.selectedVerified}
+                  language={language as 'ta' | 'en'}
+                />
+                <TimeRow
+                  label={t('rahuKalam')}
+                  value={data.selectedPanchang.rahuKalam}
+                  language={language as 'ta' | 'en'}
+                />
+                <TimeRow
+                  label={t('yamagandam')}
+                  value={data.selectedPanchang.yamagandam}
+                  language={language as 'ta' | 'en'}
+                />
+                <TimeRow
+                  label={t('kuligai')}
+                  value={data.selectedPanchang.kuligai}
+                  language={language as 'ta' | 'en'}
+                />
+                <View style={styles.summaryDivider} />
+                <TimeRow
+                  label={t('soolam')}
+                  value={data.selectedPanchang.soolam}
+                  language={language as 'ta' | 'en'}
+                />
+                <TimeRow
+                  label={t('parikaram')}
+                  value={data.selectedPanchang.parikaram}
+                  language={language as 'ta' | 'en'}
+                />
+                <FestivalsInline
+                  t={t}
+                  language={language}
+                  festivals={data.dayFestivals}
+                  observances={data.dayObservances}
+                />
+                <View style={styles.detailsRow}>
+                  <ThemedText variant="caption" color="secondary" style={{ flex: 1, flexShrink: 1, paddingRight: spacing.md }}>
+                    {t('doubleTapHint')}
                   </ThemedText>
+                  <Pressable
+                    onPress={() => router.push({ pathname: '/(tabs)/calendar', params: { view: 'today', date: selectedKey } })}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('viewDetails')}
+                    hitSlop={8}
+                  >
+                    <ThemedText variant="small" color="primary" weight="medium">
+                      {t('viewDetails')} →
+                    </ThemedText>
+                  </Pressable>
                 </View>
-              </Pressable>
-            </Card>
+              </Card>
 
-              <RasiPalamCard t={t} language={language} selectedKey={selectedKey} />
+              {/* Rasi Palan — the user's own forecast once a rasi is chosen
+                  in Settings (by name or by birth date/time); otherwise a
+                  select prompt that opens Settings. */}
+              <RasiPalamCard dateKey={selectedKey} />
 
-              <SectionHeader title={t('upcomingFestivals')} actionLabel={t('seeAll')} onAction={() => router.push('/(tabs)/festivals')} />
+            <SectionHeader title={t('upcomingFestivals')} actionLabel={t('seeAll')} onAction={() => router.push('/(tabs)/festivals')} />
               <View style={{ marginBottom: spacing.xl }}>
                 {data.upcoming.map((f) => (
                   <FestivalRow
@@ -169,73 +249,6 @@ export default function HomeScreen() {
   );
 }
 
-/** Today's rasi palam card, or a select-prompt when no moon sign is set. */
-function RasiPalamCard({
-  t,
-  language,
-  selectedKey,
-}: {
-  t: (k: string, vars?: Record<string, string | number>) => string;
-  language: string;
-  selectedKey: string;
-}) {
-  const router = useRouter();
-  // Hooks stay unconditional: useRasiPalam returns null while unconfigured.
-  const rasiPalam = useRasiPalam(selectedKey);
-  if (!rasiPalam) {
-    return (
-      <Card style={{ padding: spacing.lg, marginBottom: spacing.xl }}>
-        <ThemedText variant="h4" weight="bold">
-          {t('rasiPalam')}
-        </ThemedText>
-        <ThemedText variant="body" color="secondary" style={{ marginTop: 4 }}>
-          {t('rasiPalamPrompt')}
-        </ThemedText>
-        <Pressable
-          onPress={() => router.push('/(tabs)/my-rasi')}
-          accessibilityRole="button"
-          accessibilityLabel={t('selectRasiPalam')}
-          style={({ pressed }) => [styles.rasiPromptBtn, { opacity: pressed ? 0.8 : 1 }]}
-        >
-          <ThemedText variant="body" weight="medium" color="primary">
-            {t('selectRasiPalam')} →
-          </ThemedText>
-        </Pressable>
-      </Card>
-    );
-  }
-  const p = rasiPalam.palam;
-  return (
-    <Card style={{ padding: spacing.lg, marginBottom: spacing.xl }}>
-      <ThemedText variant="h4" weight="bold">
-        {t('rasiPalam')}
-      </ThemedText>
-      <ThemedText variant="caption" color="secondary" style={{ marginTop: 4 }}>
-        {cleanBilingualValue(rasiPalam.rasiName, language as 'ta' | 'en')}
-      </ThemedText>
-      <ThemedText variant="body" weight="medium" style={{ marginTop: spacing.md }}>
-        {cleanBilingualValue(p.headline, language as 'ta' | 'en')}
-      </ThemedText>
-      <ThemedText variant="caption" color="secondary" style={{ marginTop: 4 }}>
-        {t('moonTransitRow')}: {t('transitFromRasi', { n: p.transit })}
-      </ThemedText>
-      <ThemedText variant="body" style={{ marginTop: spacing.md }}>
-        {cleanBilingualValue(p.palam, language as 'ta' | 'en')}
-      </ThemedText>
-      <Pressable
-        onPress={() => router.push('/(tabs)/my-rasi')}
-        accessibilityRole="button"
-        accessibilityLabel={t('moreDetails')}
-        style={({ pressed }) => [styles.rasiPromptBtn, { opacity: pressed ? 0.8 : 1 }]}
-      >
-        <ThemedText variant="body" weight="medium" color="primary">
-          {t('moreDetails')} →
-        </ThemedText>
-      </Pressable>
-    </Card>
-  );
-}
-
 /** Festivals & observances of the currently selected date, inline on Home. */
 function FestivalsInline({
   t,
@@ -257,7 +270,7 @@ function FestivalsInline({
       {hasAny ? (
         <View style={{ marginTop: 4 }}>
           {festivals.map((f) => (
-            <FestivalRow key={f.id} title={language === 'ta' ? f.nameTa : f.nameEn} subtitle={f.isHoliday ? t('holiday') : null} dateLabel={''} festivalDotColor />
+            <FestivalRow key={f.id} title={language === 'ta' ? f.nameTa : f.nameEn} subtitle={f.isHoliday ? t('holiday') : null} dateLabel={''} category={f.category} />
           ))}
           {observances.map((o) => (
             <FestivalRow key={o.kind} title={language === 'ta' ? o.nameTa : o.nameEn} dateLabel={''} />
@@ -414,12 +427,15 @@ function QuickActions({
 }
 
 const styles = StyleSheet.create({
-  rasiPromptBtn: {
-    alignSelf: 'flex-start',
+  summaryDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: 'rgba(118, 37, 54, 0.12)',
+    marginVertical: spacing.md,
+  },
+  detailsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginTop: spacing.md,
-    paddingVertical: 8,
-    minHeight: 40,
-    justifyContent: 'center',
   },
   headerRow: {
     flexDirection: 'row',

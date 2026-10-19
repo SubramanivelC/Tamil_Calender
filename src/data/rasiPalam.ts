@@ -1,5 +1,5 @@
 /**
- * Rasi palam (ராசி பலம்) — moon-sign daily forecast, computed entirely
+ * Rasi palan (ராசி பலன்) — moon-sign daily forecast, computed entirely
  * offline from the bundled sidereal engine (panchangamAstro).
  *
  * Basis: Tamil astrology's Chandra-gochara — the transiting moon's rasi
@@ -11,8 +11,7 @@
  * Bilingual strings follow the app convention 'தமிழ் / English' so
  * cleanBilingualValue strips per UI language.
  */
-import { norm360, sunMoonLongitudesAtJd, toSidereal } from '@/services/panchangamAstro';
-import { julianDay } from '@/services/panchangamAstro';
+import { norm360, sunMoonLongitudesAtJd, toSidereal, julianDay } from '@/services/panchangamAstro';
 
 // ---------------------------------------------------------------------------
 // Rasi names (index 0..11, sidereal order starting Mesham)

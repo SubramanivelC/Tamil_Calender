@@ -18,6 +18,14 @@ export const taDict = {
 
   // Home
   today: 'இன்று',
+  tomorrow: 'நாளை',
+  inNDays: '{n} நாட்களில்',
+  chandrashtamaTitle: 'இன்று சந்திராஷ்டமம்',
+  chandrashtamaMessage: 'சந்திரன் உங்கள் எட்டாவது ராசியில் பயணிக்கிறான் — புதிய தொடக்கங்களைத் தவிர்த்து, இன்று கூடுதல் கவனம் தேவை.',
+  bannerNowUntil: '{band} இப்போது — {time} வரை',
+  bannerStartsIn: '{band} {dur} பிறகு — {time} மணிக்கு',
+  durHm: '{h} மணி {m} நிமிடம்',
+  durMin: '{m} நிமிடம்',
   gregorianDate: 'கிரெகோரிய தேதி',
   tamilDate: 'தமிழ் தேதி',
   tamilMonthYear: 'தமிழ் மாதம் / வருடம்',
@@ -103,7 +111,8 @@ export const taDict = {
   festival: 'பண்டிகை',
 
   // Rasi palam
-  rasiPalam: 'ராசி பலம்',
+  rasiPalam: 'ராசி பலன்',
+  rasiPalamPrompt: 'உங்கள் ராசியைத் தேர்வு செய்து இன்றைய ராசி பலனைப் பாருங்கள்',
   rasiSelectMode: 'ராசி தேர்வு',
   byRasiName: 'ராசிப் பெயரால்',
   selectYourRasi: 'உங்கள் ராசி',
@@ -116,8 +125,8 @@ export const taDict = {
   moonTransitRow: 'சந்திரகோச்சாரம்',
   transitFromRasi: 'உங்கள் ராசியிலிருந்து {n}வது',
   moreDetails: 'மேலும் விவரங்கள்',
-  tabMyRasi: 'என் ராசி பலம்',
-  selectRasiPalam: 'ராசி பலம் தேர்வு',
+  tabMyRasi: 'என் ராசி பலன்',
+  selectRasiPalam: 'ராசி பலன் தேர்வு',
   findByBirth: 'பிறந்த தேதியால் ராசியை கண்டுபிடி',
   birthDate: 'பிறந்த தேதி',
   birthTime: 'பிறந்த நேரம் (24 மணி)',
@@ -128,7 +137,7 @@ export const taDict = {
   computeRasi: 'என் ராசியை கண்டுபிடி',
   yourJanmaRasi: 'உங்கள் ஜன்ம ராசி',
   useThisRasi: 'இந்த ராசியை எடு',
-  allRasisPalam: 'இன்றைய அனைத்து ராசிகள் பலம்',
+  allRasisPalam: 'இன்றைய அனைத்து ராசிகள் பலன்',
   allRasisPalamHint: 'இந்த மாதம் சந்திரன் ஒவ்வொரு ராசியிலும் பயணிக்கிறான்; ஒவ்வொரு வரிசையும் அந்த ராசியின் சந்திரகோச்சாரப் பலன்.',
 
   // Search
