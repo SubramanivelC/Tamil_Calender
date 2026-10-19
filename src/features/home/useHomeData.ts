@@ -14,6 +14,7 @@ import { getPanchangamForDate } from '@/database/repositories/panchangamRepo';
 import { parseDateKey, localTodayKey, toDateKey } from '@/utils/dates';
 import { gregorianMonthName, weekdayName, tamilMonthName } from '@/localization';
 import { TAMIL_YEAR_CYCLE } from '@/data/mappings';
+import { formatNumerals } from '@/utils/numerals';
 
 export interface HomeData {
   todayKey: string;
@@ -90,9 +91,9 @@ export function useHomeData(selectedKey: string): {
         const observanceSuffix = observances.map((o) => o.kind).join(', ');
         setData({
           todayKey,
-          todayLabel: formatToday(todayKey, language),
-          selectedGregorianLabel: formatGregorian(selectedKey, language),
-          selectedTamilLabel: await formatTamil(selectedKey, language),
+          todayLabel: formatNumerals(formatToday(todayKey, language), numerals),
+          selectedGregorianLabel: formatNumerals(formatGregorian(selectedKey, language), numerals),
+          selectedTamilLabel: formatNumerals(await formatTamil(selectedKey, language), numerals),
           selectedMonthName: gregorianMonthName(month, language),
           grid,
           selectedPanchang: record,

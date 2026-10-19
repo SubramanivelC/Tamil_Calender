@@ -3,6 +3,7 @@ import { ScrollView, View, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/ThemedText';
+import { Card } from '@/components/ThemedView';
 import { SectionHeader } from '@/components/SectionHeader';
 import { FestivalRow } from '@/components/FestivalRow';
 import { EmptyState } from '@/components/EmptyState';
@@ -13,6 +14,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { getFestivalsForYear, type RawOccurrenceRow } from '@/database/repositories/festivalRepo';
 import { spacing } from '@/theme/spacing';
 import { localTodayKey, parseDateKey, diffCalendarDays } from '@/utils/dates';
+import { formatNumerals } from '@/utils/numerals';
 import { categoryColorName } from '@/components/FestivalRow';
 import type { FestivalCategory } from '@/types';
 
@@ -34,6 +36,7 @@ export default function FestivalsScreen() {
   const [yearOffset, setYearOffset] = useState(0);
   const [loading, setLoading] = useState(true);
   const [all, setAll] = useState<Awaited<ReturnType<typeof getFestivalsForYear>>>([]);
+  const numerals = useSettingsStore((s) => s.numerals);
 
   const todayKey = useMemo(() => localTodayKey(), []);
   const todayYear = parseDateKey(todayKey).year;
@@ -116,7 +119,7 @@ export default function FestivalsScreen() {
             </ThemedText>
           </Pressable>
           <ThemedText variant="h4" weight="bold">
-            {todayYear + yearOffset}
+            {formatNumerals(String(todayYear + yearOffset), numerals as 'arabic' | 'tamil')}
           </ThemedText>
           <Pressable onPress={() => setYearOffset((y) => y + 1)} accessibilityRole="button" accessibilityLabel={t('nextYear')}>
             <ThemedText variant="body" color="primary">
@@ -155,18 +158,22 @@ export default function FestivalsScreen() {
           />
         ) : (
           grouped.map(([monthKey, fests]) => (
-            <View key={monthKey}>
+            <View key={monthKey} style={{ marginBottom: spacing.md }}>
               <SectionHeader title={gregorianMonthName(parseInt(monthKey.slice(5), 10), language)} />
-              {fests.map((f) => (
-                <FestivalRow
-                  key={f.id}
-                  title={language === 'ta' ? f.nameTa : f.nameEn}
-                  subtitle={f.isHoliday ? t('holiday') : null}
-                  dateLabel={f.dateKey}
-                  category={f.category}
-                  onPress={() => router.push({ pathname: '/(tabs)/calendar', params: { view: 'today', date: f.dateKey } })}
-                />
-              ))}
+              {/* White card so rows read as cards on the ivory page, like
+                  Home — without them the rows melt into the background. */}
+              <Card style={{ paddingVertical: spacing.sm, paddingHorizontal: spacing.md }}>
+                {fests.map((f) => (
+                  <FestivalRow
+                    key={f.id}
+                    title={language === 'ta' ? f.nameTa : f.nameEn}
+                    subtitle={f.isHoliday ? t('holiday') : null}
+                    dateLabel={f.dateKey}
+                    category={f.category}
+                    onPress={() => router.push({ pathname: '/(tabs)/calendar', params: { view: 'today', date: f.dateKey } })}
+                  />
+                ))}
+              </Card>
             </View>
           ))
         )}

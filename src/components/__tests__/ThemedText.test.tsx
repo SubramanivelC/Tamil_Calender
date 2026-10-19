@@ -36,7 +36,7 @@ describe('ThemedText', () => {
   test('applies secondary color variant', async () => {
     const handle = await renderTree(<ThemedText color="secondary">sub</ThemedText>);
     const node = (await handle.getByText('sub')) as unknown as TextLikeNode;
-    expect(firstStyle(node).color).toBe('#77716E');
+    expect(firstStyle(node).color).toBe('#6B655E');
   });
 
   test('applies primary color variant', async () => {

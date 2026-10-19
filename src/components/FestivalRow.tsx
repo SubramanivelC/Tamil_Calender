@@ -7,6 +7,7 @@ import { useT } from '@/localization';
 import { gregorianMonthName } from '@/localization';
 import { useSettingsStore } from '@/store/settingsStore';
 import { localTodayKey, parseDateKey, diffCalendarDays } from '@/utils/dates';
+import { formatNumerals } from '@/utils/numerals';
 import type { FestivalCategory } from '@/types';
 
 /** Category → semantic color-token name; keep in sync with the legend on
@@ -38,11 +39,12 @@ interface FestivalRowProps {
 function countdownLabel(
   t: (k: string, vars?: Record<string, string | number>) => string,
   language: 'en' | 'ta',
-  dateKey: string
+  dateKey: string,
+  numerals: 'arabic' | 'tamil'
 ) {
   const days = diffCalendarDays(localTodayKey(), dateKey);
   const { day, month } = parseDateKey(dateKey);
-  const dateText = `${day} ${gregorianMonthName(month, language)}`;
+  const dateText = formatNumerals(`${day} ${gregorianMonthName(month, language)}`, numerals);
   if (days === 0) return { label: t('today'), highlight: true, dateText };
   if (days === 1) return { label: t('tomorrow'), highlight: true, dateText };
   if (days > 1) return { label: t('inNDays', { n: days }), highlight: false, dateText };
@@ -59,8 +61,9 @@ export function FestivalRow({
   const theme = useTheme();
   const t = useT();
   const language = useSettingsStore((s) => s.language);
+  const numerals = useSettingsStore((s) => s.numerals);
   const isDateKey = /^\d{4}-\d{2}-\d{2}$/.test(dateLabel);
-  const countdown = isDateKey ? countdownLabel(t, language, dateLabel) : null;
+  const countdown = isDateKey ? countdownLabel(t, language, dateLabel, numerals) : null;
   const dotColor = category ? theme.colors[categoryColorName[category]] : null;
 
   return (
@@ -101,7 +104,7 @@ export function FestivalRow({
         </View>
       ) : (
         <ThemedText variant="small" color="secondary">
-          {dateLabel}
+          {dateLabel ? formatNumerals(dateLabel, numerals) : ''}
         </ThemedText>
       )}
     </Pressable>

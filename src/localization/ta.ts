@@ -46,6 +46,7 @@ export const taDict = {
   riseAndSet: 'உதயம் & அஸ்தமனம்',
   showFullPanchangam: 'முழு பஞ்சாங்கத்தைக் காட்டு',
   hideFullPanchangam: 'முழு பஞ்சாங்கத்தை மறை',
+  approxNote: '≈ குறியிடப்பட்டவை: இத்தேதி உள்ளத்திலுள்ள சரிபார்க்கப்பட்ட தரவுத்தொகுப்பில் (2026-2029) இல்லை; இந்த மதிப்புகள் ஆஃப்லைனில் கணக்கிடப்பட்டவை.',
   subhaMuhurtham: 'சுப முகூர்த்தம்',
   upcomingFestivals: 'வரும் பண்டிகைகள்',
   quickActions: 'விரைவு அணுகல்',

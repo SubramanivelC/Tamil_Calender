@@ -2,6 +2,7 @@ import 'react-native-reanimated';
 import 'react-native-gesture-handler';
 import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
+import { NavigationBar } from 'expo-navigation-bar';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -68,8 +69,13 @@ export default function RootLayout() {
 
 function ThemedApp({ failed }: { failed: boolean }) {
   const { colors, dark } = useThemeColors();
+
   return (
     <>
+      {/* Android gesture/navigation bar: the bar color itself comes from the
+          expo-navigation-bar config plugin (app.json, build-time); this
+          component keeps the button contrast in sync with the app theme. */}
+      <NavigationBar style={dark ? 'dark' : 'light'} />
       <StatusBar style={dark ? 'light' : 'dark'} />
       <Stack
         screenOptions={{

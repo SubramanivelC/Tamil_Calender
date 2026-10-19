@@ -5,7 +5,7 @@ describe('design system themes', () => {
     expect(lightTheme.colors.primary).toBe('#762536');
     expect(lightTheme.colors.background).toBe('#FAF4E8');
     expect(lightTheme.colors.text).toBe('#292524');
-    expect(lightTheme.colors.textSecondary).toBe('#77716E');
+    expect(lightTheme.colors.textSecondary).toBe('#6B655E');
   });
 
   test('dark theme differs from light on background/surface', () => {

@@ -327,22 +327,24 @@ function TodayHero({
   firstDayOfWeek: 0 | 1;
   t: (k: string) => string;
 }) {
+  const { colors } = useThemeColors();
   const parts = parseDateKey(selectedKey);
   const selectedTamilMonthName = useMemo(
     () => tamilMonthsSpanningGregorianMonth(parts.year, parts.month, language as 'ta' | 'en'),
     [parts.year, parts.month, language]
   );
   return (
-    <Card style={{ padding: spacing.lg, marginBottom: spacing.xl }}>
-      <ThemedText variant="small" color="secondary">
-        {t('today')} · {data.todayLabel}
-      </ThemedText>
-      <ThemedText variant="h2" weight="bold" style={{ marginTop: 4 }}>
-        {data.selectedTamilLabel}
-      </ThemedText>
-      <ThemedText variant="body" color="secondary" style={{ marginTop: 4 }}>
-        {data.selectedGregorianLabel}
-      </ThemedText>
+    <Card style={{ padding: 0, marginBottom: spacing.xl, overflow: 'hidden' }}>
+        {/* Brand band — Tamil date on the app's signature maroon; the one
+            place the identity color is used at full strength. */}
+      <View style={[stylesTodayHero.heroBand, { backgroundColor: colors.primary }]}>
+        <ThemedText variant="caption" color="gold" weight="medium">
+          {t('today')} • {data.selectedGregorianLabel}
+        </ThemedText>
+        <ThemedText variant="h2" weight="bold" color="onMaroon" style={{ marginTop: 2 }} tamil>
+          {data.selectedTamilLabel}
+        </ThemedText>
+      </View>
       <View style={{ marginTop: spacing.lg }}>
         <MonthSelector
           monthName={data.selectedMonthName}
@@ -370,6 +372,13 @@ function TodayHero({
     </Card>
   );
 }
+
+const stylesTodayHero = StyleSheet.create({
+  heroBand: {
+    padding: spacing.lg,
+    paddingBottom: spacing.md,
+  },
+});
 
 function shiftMonth(key: string, delta: number): string {
   const { year, month, day } = parseDateKey(key);

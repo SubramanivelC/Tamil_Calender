@@ -86,6 +86,10 @@ export function AllRasisPalamCard({ dateKey }: { dateKey: string }) {
                   {cleanBilingualValue(RASI_NAMES[rasi] ?? '', language as 'ta' | 'en')}
                 </ThemedText>
                 <View style={styles.palamRowRight}>
+                  {/* Category badge: a colored dot makes the 12-row list
+                      scannable — best=gold, good=green, caution=amber,
+                      chandrashtama=red, average=neutral. */}
+                  <View style={[styles.categoryDot, { backgroundColor: categoryDotColor(colors, row.category) }]} />
                   <ThemedText
                     variant="small"
                     color={row.category === 'chandrashtama' ? 'error' : mine ? 'primary' : 'secondary'}
@@ -103,6 +107,26 @@ export function AllRasisPalamCard({ dateKey }: { dateKey: string }) {
       </Card>
     </View>
   );
+}
+
+/** Semantic dot color per palam category from theme tokens. */
+function categoryDotColor(
+  colors: { gold: string; success: string; textSecondary: string; festival: string; error: string },
+  category: DailyPalam['category']
+): string {
+  switch (category) {
+    case 'best':
+      return colors.gold;
+    case 'good':
+    case 'mixed-good':
+      return colors.success;
+    case 'caution':
+      return colors.festival; // amber
+    case 'chandrashtama':
+      return colors.error;
+    default:
+      return colors.textSecondary; // moderate
+  }
 }
 
 const styles = StyleSheet.create({
@@ -124,5 +148,13 @@ const styles = StyleSheet.create({
   },
   palamRowRight: {
     flexShrink: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  categoryDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
   },
 });

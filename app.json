@@ -61,7 +61,17 @@
           "color": "#762536"
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-navigation-bar",
+        {
+          "color": "#FFFFFF",
+          "dark": {
+            "color": "#251B1B"
+          },
+          "enforceContrast": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

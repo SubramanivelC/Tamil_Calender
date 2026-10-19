@@ -44,6 +44,7 @@ export const enDict = {
   riseAndSet: 'Rise & set',
   showFullPanchangam: 'Show full panchangam',
   hideFullPanchangam: 'Hide full panchangam',
+  approxNote: 'Marked with ≈: this date is outside the bundled verified dataset (2026-2029); these values are computed offline dataset-free.',
   subhaMuhurtham: 'Subha Muhurtham',
   upcomingFestivals: 'Upcoming festivals',
   quickActions: 'Quick actions',

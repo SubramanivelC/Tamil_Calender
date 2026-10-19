@@ -18,7 +18,9 @@ export const palette = {
 
   // Text (light scheme)
   primaryText: '#292524',
-  secondaryText: '#77716E',
+  // Darkened from #77716E: on the ivory background #FAF4E8 the old value
+  // is ~4.0:1 — below WCAG AA (4.5:1) for small text; this is ~4.7:1.
+  secondaryText: '#6B655E',
   white: '#FFFFFF',
 
   // Semantic

@@ -21,7 +21,7 @@ import { getEventsForDate, deleteEvent } from '@/database/repositories/eventsRep
 import type { UserEvent, ReminderDefinition, Language } from '@/types';
 import { DEFAULT_REMINDER_HHMM } from '@/data/constants';
 import { spacing, radius } from '@/theme/spacing';
-import { formatTimeWithMeridiem } from '@/utils/numerals';
+import { formatTimeWithMeridiem, formatNumerals } from '@/utils/numerals';
 import { localTodayKey, parseDateKey } from '@/utils/dates';
 
 import { selectionTick, lightTap, successTick } from '@/utils/haptics';
@@ -56,6 +56,7 @@ export function DayDetailsContent({
   const t = useT();
   const { colors } = useThemeColors();
   const language = useSettingsStore((s) => s.language);
+  const numerals = useSettingsStore((s) => s.numerals);
   const isToday = dateKey === localTodayKey();
   const { data, loading, previousKey, nextKey } = useDayDetails(dateKey, language);
 
@@ -192,7 +193,7 @@ export function DayDetailsContent({
         </Pressable>
         <View style={styles.dayNavCenter}>
           <ThemedText variant="caption" color="secondary" style={styles.dayNavDate}>
-            {data.gregorianLabel}
+            {formatNumerals(data.gregorianLabel, numerals as 'arabic' | 'tamil')}
           </ThemedText>
           <Pressable
             disabled={isToday}
@@ -233,7 +234,7 @@ export function DayDetailsContent({
       <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: bottomPadding ?? spacing.xxxl }}>
         <Card style={{ padding: spacing.lg, marginBottom: spacing.xl }}>
           <ThemedText variant="small" color="secondary">
-            {dateKey}
+            {formatNumerals(dateKey, numerals as 'arabic' | 'tamil')}
           </ThemedText>
           <ThemedText variant="h2" weight="bold" style={{ marginTop: 4 }}>
             {data.weekdayLabel}
@@ -243,7 +244,7 @@ export function DayDetailsContent({
               {t('gregorianDate')}:
             </ThemedText>
             <ThemedText variant="body" style={styles.metaRowValue}>
-              {elaboratedGregorian(dateKey, language)}
+              {formatNumerals(elaboratedGregorian(dateKey, language), numerals as 'arabic' | 'tamil')}
             </ThemedText>
           </View>
           <View style={styles.metaRow}>
@@ -252,7 +253,10 @@ export function DayDetailsContent({
             </ThemedText>
             <ThemedText variant="body" color="primary" weight="medium" style={styles.metaRowValue}>
               {data.tamilDay !== null && data.tamilMonthLabel
-                ? `${data.tamilMonthLabel} ${data.tamilDay}${data.tamilYearLabel ? `, ${data.tamilYearLabel}` : ''}`
+                ? formatNumerals(
+                    `${data.tamilMonthLabel} ${data.tamilDay}${data.tamilYearLabel ? `, ${data.tamilYearLabel}` : ''}`,
+                    numerals as 'arabic' | 'tamil'
+                  )
                 : `${t('dataUnavailableTitle')}`}
             </ThemedText>
           </View>
@@ -333,6 +337,17 @@ export function DayDetailsContent({
             </View>
           ) : null}
         </Card>
+
+        {/* Explain the ≈ marks instead of letting them look like missing
+            data: the bundled verified dataset has finite year coverage. */}
+        {!verified ? (
+          <View style={styles.approxNoteRow}>
+            <Ionicons name="information-circle-outline" size={14} color={colors.textSecondary} />
+            <ThemedText variant="caption" color="secondary" style={{ flex: 1 }}>
+              {t('approxNote')}
+            </ThemedText>
+          </View>
+        ) : null}
 
         {/* Rasi Palan for all 12 rasis — the moon transits every rasi once
             a month, so each row is that rasi's own day forecast; the row
@@ -537,6 +552,12 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     fontSize: 15,
     padding: 4,
+  },
+  approxNoteRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    marginBottom: spacing.xl,
   },
   noteActions: {
     flexDirection: 'row',

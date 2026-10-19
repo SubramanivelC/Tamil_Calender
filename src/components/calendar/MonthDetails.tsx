@@ -7,6 +7,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { useT } from '@/localization';
 import { useSettingsStore } from '@/store/settingsStore';
 import { spacing } from '@/theme/spacing';
+import { formatNumerals } from '@/utils/numerals';
 import { useMonthDetails, type MonthDetailEntry } from '@/features/calendar/useMonthDetails';
 
 /**
@@ -29,6 +30,7 @@ export function MonthDetails({
   const t = useT();
   const { colors } = useThemeColors();
   const language = useSettingsStore((s) => s.language);
+  const numerals = useSettingsStore((s) => s.numerals);
   const details = useMonthDetails(year, month);
 
   useEffect(() => {
@@ -61,7 +63,10 @@ export function MonthDetails({
           </ThemedText>
         ) : (
           groups.map((g) => (
-            <View key={g.title} style={styles.group}>
+            <View
+              key={g.title}
+              style={[styles.group, g.muted ? [styles.mutedGroup, { backgroundColor: colors.surfaceMuted }] : null]}
+            >
               <ThemedText variant="small" weight="medium" color="secondary">
                 {g.title}
               </ThemedText>
@@ -81,7 +86,7 @@ export function MonthDetails({
                         (row as { isHoliday?: boolean }).isHoliday ? 'primary' : 'default'
                       }
                     >
-                      {String(row.day)}
+                      {formatNumerals(String(row.day), numerals as 'arabic' | 'tamil')}
                     </ThemedText>
                   </View>
                   <ThemedText
@@ -107,6 +112,11 @@ const styles = StyleSheet.create({
   group: {
     marginBottom: spacing.md,
     gap: 2,
+  },
+  mutedGroup: {
+    padding: spacing.md,
+    gap: 2,
+    borderRadius: 12,
   },
   row: {
     flexDirection: 'row',
