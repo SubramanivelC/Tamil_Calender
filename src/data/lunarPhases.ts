@@ -5,23 +5,45 @@
  * 2026–2029 coverage window at import time. This module is the shared,
  * per-range core so the repositories can compute the same printed-calendar
  * conventions for any navigable Gregorian year (1900–2100) on demand —
- * nothing here is copy-typed; every date comes from the bundled sidereal
- * ephemeris (panchangamAstro.ts, Meeus-anchored, see tests).
+ * nothing here is copy-typed; every date comes from the high-accuracy
+ * ephemeris (lunarEphemeris.ts, Meeus ch.47 full series, see tests).
  *
- * Convention (matches printed Tamil daily calendars):
- *  - Sunrise anchor 06:00 IST for the elongation sample.
- *  - Amavasai = calendar day containing the conjunction (elongation wraps
- *    past 0° between two sunrises); Pournami = the day containing full
- *    moon (elongation crosses 180° upward). The phase instant is
- *    interpolated linearly; the day owning a phase before 18:00 IST is
- *    marked, else the next day (the printed convention).
- *  - Tithi-band observances take the day where the moon-sun elongation is
- *    closest to the band center (local minimum), guaranteeing exactly one
- *    day per fortnight even when a fast moon skips a ±8° window
- *    (Ekadasi = tithi 11 ⇒ centers 126/306; Pradosham = trayodashi ⇒
- *    centers 150/330).
+ * DAY RULE (printed Tamil daily-calendar convention, cross-verified against
+ * Drik Panchang Chennai monthly panchangam, Prokerala Chennai and the
+ * TamilDailyCalendar 2027 list — see lunarPhases tests and DATA_SOURCES.md):
+ *   A phase (amavasai = conjunction tithi, pournami = full-moon tithi) is
+ *   labelled with the FIRST Chennai sunrise that falls inside the phase
+ *   tithi interval; i.e. the day the phase tithi is present at sunrise.
+ *   When no sunrise falls inside the tithi (tithi entirely between two
+ *   sunrises, happens a couple of times per year), the phase belongs to
+ *   the sunrise-day containing the conjunction — equivalently the
+ *   sunrise-day holding the larger part of the tithi. These are exactly
+ *   the classical panchangam day-naming rules; published lists use them.
+ *
+ * Why a sunrise rule and not a civil-midnight rule: tithi day-naming is
+ * anchored to sunrise in panchangam tradition ("panchang day starts and
+ * ends with sunrise"). Phase instants are computed at the true elongation
+ * crossing (Meeus ch.47 full 60-term series ⇒ ±~2 min of time) and never
+ * at a fixed clock time; a *fixed-IST-sunrise* or midnight junction rule
+ * mislabels every event whose tithi begins in the afternoon or whose
+ * conjunction lands in the morning IST hours (the regression previously
+ * shipped in dataset 2026.10-subset.6 — see the published-table test).
+ *
+ * Timezone independence: no `Date`, no `Date.now`, no device local time —
+ * the engine maps Gregorian parts ⇄ Julian Days purely.
  */
 import { julianDay, sunMoonLongitudesAtJd, norm360 } from '@/services/panchangamAstro';
+import {
+  IST_OFFSET_DAYS,
+  chennaiSunriseJdUt,
+  daysInGregorianMonth,
+  elongationAtJdUt,
+  findElongationCrossing,
+  fullMoonJdUt,
+  meanCycle,
+  meanNewMoonJd,
+  newMoonJdUt,
+} from '@/services/lunarEphemeris';
 
 export type AmPournamiKind = 'amavasai' | 'pournami';
 
@@ -53,54 +75,143 @@ function eachDay(
 ): void {
   for (let y = startY; y <= endY; y++) {
     for (let m = 1; m <= 12; m++) {
-      const dim = new Date(y, m, 0).getDate();
+      const dim = daysInGregorianMonth(y, m);
       for (let d = 1; d <= dim; d++) {
         cb(y, m, d, elongAtSunriseIST(y, m, d));
       }
     }
   }
-}/**
- * Amavasai + Pournami calendar days over an inclusive Gregorian year range.
- * O(days); ~7 ms/year with the truncated-series ephemeris.
- *
- * Rule (printed Tamil daily-calendar convention): the calendar day on which
- * the PHASE TITHI BEGINS. The amavasai tithi (number 30) spans elongation
- * [348°, 360°) starting ~24h before the conjunction; the pournami (purnima)
- * tithi (15) spans [168°, 180°) ending at the full moon. Marking the
- * tithi-start day — not the conjunction instant's day — reproduces the
- * published TamilDailyCalendar/Drik Chennai lists exactly (see the
- * published-table regression test): junction instants near midnight made
- * half the conjunction-day labels land one day late.
- */
-const AMAVASAI_TITHI_BEGIN = 348; // elong 348° = start of amavasai tithi
-const POURNAMI_TITHI_BEGIN = 168; // elong 168° = start of purnima tithi
-
-function crossingDay(curKey: string, nextKey: string, a: number, b: number, target: number): string | null {
-  const crossed = a < target && (b >= target || b < a); // b<a => wrapped past 360
-  if (!crossed) return null;
-  const span = b >= a ? b - a : b + 360 - a;
-  const offsetH = ((target - a) / span) * 24; // hours after cur-day 06:00 IST
-  // Junction: the first 18h after the 06:00 sample belong to the sample's own
-  // calendar day; later ones (past midnight) belong to the next day.
-  return offsetH < 18 ? curKey : nextKey;
 }
+
+/**
+ * Amavasai + Pournami calendar days over an inclusive Gregorian year range.
+ * O(phases) (~25/year); a few ms/year with the full-series ephemeris.
+ *
+ * Phase instants (UT Julian Days):
+ *   amavasai: tB = elongation crossing 348° (start of tithi 30),
+ *             tE = elongation crossing 0° (the conjunction itself).
+ *   pournami: tB = elongation crossing 168° (start of the purnima tithi),
+ *             tE = elongation crossing 180° (the full moon itself).
+ * The phase tithi occupies [tB, tE); its labelled day follows the
+ * first-sunrise-inside-the-tithi rule documented in the module header.
+ */
+
+export interface PhaseInstantInfo {
+  kind: AmPournamiKind;
+  /** UT Julian Days of the tithi begin & end (conjunction / full moon). */
+  tBeginJdUt: number;
+  tEndJdUt: number;
+  /** Labelled civil date (IST): the printed amavasai/pournami day. */
+  label: { y: number; m: number; d: number };
+}
+
+/** Sane tithi length bounds for the begin-boundary Newton seed (hours). */
+const TITHI_MIN_H = 17;
+const TITHI_MAX_H = 29;
 
 export function amPournaForRange(startY: number, endY: number): LunarPhaseRecord[] {
   const rows: LunarPhaseRecord[] = [];
-  const dates: { key: string; e: number }[] = [];
-  eachDay(startY, endY, (y, m, d, e) => dates.push({ key: toDateKey(y, m, d), e }));
-  for (let i = 0; i < dates.length - 1; i++) {
-    const cur = dates[i];
-    const next = dates[i + 1];
-    if (!cur || !next) continue;
-    const a = cur.e;
-    const b = next.e;
-    const amKey = crossingDay(cur.key, next.key, a, b, AMAVASAI_TITHI_BEGIN);
-    if (amKey) rows.push({ dateKey: amKey, kind: 'amavasai' });
-    const porKey = crossingDay(cur.key, next.key, a, b, POURNAMI_TITHI_BEGIN);
-    if (porKey) rows.push({ dateKey: porKey, kind: 'pournami' });
+  for (const ph of phaseInstantsForRange(startY, endY)) {
+    rows.push({ dateKey: toDateKey(ph.label.y, ph.label.m, ph.label.d), kind: ph.kind });
   }
-  return rows;
+  return rows.sort((a, b) => a.dateKey.localeCompare(b.dateKey));
+}
+
+/**
+ * Phase instants + their printed-day labels for a year range. Also used by
+ * the regression tests to compare computed instants against published
+ * panchangam tithi intervals and astronomical ephemerides.
+ */
+export function phaseInstantsForRange(startY: number, endY: number): PhaseInstantInfo[] {
+  const jdStart = julianDay(startY, 1, 1, 0) - 35;
+  const jdEnd = julianDay(endY, 12, 31, 1) + 35;
+  const kMin = Math.floor(meanCycle(jdStart));
+  const kMax = Math.ceil(meanCycle(jdEnd));
+  const out: PhaseInstantInfo[] = [];
+  for (let k = kMin; k <= kMax; k++) {
+    out.push(amPournaInstant('amavasai', newMoonJdUt(k)));
+    out.push(amPournaInstant('pournami', fullMoonJdUt(k)));
+  }
+  return out
+    .filter((p) => p.label.y >= startY && p.label.y <= endY)
+    .sort((a, b) => a.tEndJdUt - b.tEndJdUt);
+}
+
+function amPournaInstant(kind: AmPournamiKind, tEndJdUt: number): PhaseInstantInfo {
+  const target = kind === 'amavasai' ? 348 : 168;
+  let tBeginJdUt = findElongationCrossing(target, tEndJdUt - TITHI_MAX_H / 24);
+  // Guard against a Newton mis-land (tithi lengths run ~19–26.5 h).
+  const spanH = (tEndJdUt - tBeginJdUt) * 24;
+  if (spanH < TITHI_MIN_H || spanH > TITHI_MAX_H) {
+    // Re-seed from the mean tithi duration and retry once.
+    tBeginJdUt = findElongationCrossing(target, tEndJdUt - 23.5 / 24);
+  }
+  return {
+    kind,
+    tBeginJdUt,
+    tEndJdUt,
+    label: phaseDayLabel(tBeginJdUt, tEndJdUt),
+  };
+}
+
+function phaseDayLabel(tBeginJdUt: number, tEndJdUt: number): { y: number; m: number; d: number } {
+  // Candidate 1: the civil day on which the tithi begins, if that day's
+  // Chennai sunrise precedes the tithi-begin.
+  const beginDay = civilFromJdIst(tBeginJdUt);
+  if (chennaiSunriseJdUt(beginDay.y, beginDay.m, beginDay.d) > tBeginJdUt) {
+    // Tithi begins before that day's dawn ⇒ the day opens inside the tithi.
+    if (chennaiSunriseJdUt(beginDay.y, beginDay.m, beginDay.d) < tEndJdUt) {
+      return beginDay;
+    }
+  } else {
+    // First dawn after the tithi begins: the next morning.
+    const next = nextDay(beginDay);
+    if (chennaiSunriseJdUt(next.y, next.m, next.d) < tEndJdUt) {
+      return next;
+    }
+  }
+  // No Chennai sunrise falls inside the tithi: the phase belongs to the
+  // sunrise-day containing the conjunction (equivalently the sunrise-day
+  // holding the larger part of the tithi).
+  return sunriseDayOf(tEndJdUt);
+}
+
+/** The sunrise-day (y,m,d) such that sunrise(d) ≤ t ≤ sunrise(d+1). */
+function sunriseDayOf(jdUt: number): { y: number; m: number; d: number } {
+  const civil = civilFromJdIst(jdUt);
+  if (chennaiSunriseJdUt(civil.y, civil.m, civil.d) <= jdUt) return civil;
+  return prevDay(civil);
+}
+
+/** Civil Gregorian date (IST calendar day) for a UT Julian Day. */
+export function civilFromJdIst(jdUt: number): { y: number; m: number; d: number } {
+  const f0 = jdUt + IST_OFFSET_DAYS + 0.5;
+  let Z = Math.floor(f0);
+  const A = Z >= 2299161 ? Z + 1 + Math.floor((Z - 1867216.25) / 36524.25) - Math.floor(Math.floor((Z - 1867216.25) / 36524.25) / 4) : Z;
+  const B = A + 1524;
+  const C = Math.floor((B - 122.1) / 365.25);
+  const D = Math.floor(365.25 * C);
+  const E = Math.floor((B - D) / 30.6001);
+  const day = Math.floor(B - D - Math.floor(30.6001 * E));
+  const month = E < 14 ? E - 1 : E - 13;
+  const year = month > 2 ? C - 4716 : C - 4715;
+  return { y: year, m: month, d: day };
+}
+
+function nextDay(c: { y: number; m: number; d: number }): { y: number; m: number; d: number } {
+  let { y, m, d } = c;
+  if (d < daysInGregorianMonth(y, m)) d++;
+  else if (m < 12) { m++; d = 1; }
+  else { y++; m = 1; d = 1; }
+  return { y, m, d };
+}
+
+function prevDay(c: { y: number; m: number; d: number }): { y: number; m: number; d: number } {
+  let { y, m, d } = c;
+  if (d > 1) d--;
+  else if (m > 1) { m--; d = daysInGregorianMonth(y, m); }
+  else { y--; m = 12; d = 31; }
+  return { y, m, d };
 }
 
 /**

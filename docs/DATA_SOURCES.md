@@ -69,21 +69,35 @@ the printed-sheet override layer covers the verified Vakya divergences.
 
 - Paksha (Shukla/Krishna) is a structural approximation (day 1–15 vs 16–30) and
   is labelled as computed.
-- **Amavasai and Pournami dates**: the printed Tamil calendars label the day
-  on which the phase tithi BEGINS (amavasai tithi spans elongation
-  [348°,360°), pournami tithi spans [168°,180°)) — not the conjunction
-  instant's day. Within the dataset window, the 2026 rows are
-  **transcription-verified from the published lists**
-  (tamildailycalendar.com amavasai/pournami 2026, corroborated by Drik
-  Panchang Chennai) and are the truth anchor (`data/__tests__/lunarPhases.test.ts`);
-  2027–2029 and all other navigable years are engine-derived
-  (`src/data/lunarPhases.ts` tithi-start junction rule), with an occasional
-  ±1-day possibility on junction instants within the truncated series'
-  hour-scale precision. A phase spans two calendar days in printing sources —
-  the app always marks exactly ONE day (the printed convention), never two.
-  So are the Pradosham (trayodashi)
-  and Ekadasi (tithi 11) lists. The Meeus example anchors these computations
-  in `src/services/__tests__/panchangamAstro.test.ts`.
+- **Amavasai and Pournami dates**: the printed Tamil calendars follow the
+  classical panchangam day-naming rule — a phase belongs to the
+  **first Chennai sunrise falling inside its phase tithi** (the amavasai
+  tithi spans elongation [348°,360°), the pournami tithi [168°,180°));
+  when no sunrise falls inside the tithi (it sits wholly between two sunrises),
+  the sunrise-day containing the conjunction/phase end. Concretely: night
+  conjunctions label the dawn day, morning-after-dawn conjunctions label
+  the same day, and conjunctions between one dawn and the next label the
+  conjunction's sunrise-day. This is exactly how Drik Panchang's Chennai
+  monthly panchangam and Prokerala's Chennai Tamil calendar mark the days
+  (verified per-date for Mar/Jun/Sep/Nov 2026 amavasai and
+  Apr/Aug/Oct/Dec 2026 pournami, May 2026, Feb 2027 pournami,
+  Jul 2027 amavasai, Oct 2028), and how the TamilDailyCalendar 2027 list
+  prints all 25 rows of that year.
+  NOTE: the TDC 2026 *list page* is internally inconsistent with TDC's own
+  2027 list (8 of 25 rows match the old tithi-start junction rule); the
+  multiple-publisher evidence above outweighs it.
+- Phase instants come from the full Meeus ch.47 series (`lunarEphemeris.ts`,
+  ±0.01° ⇒ ±~2 min) with ΔT (Espenak–Meeus) and Chennai sunrise root-solves;
+  they regress against timeanddate's new/full-moon table for 2026 to ±3 min
+  and Drik Chennai's published tithi intervals 2028–2029 to ±5 min
+  (`src/data/__tests__/lunarPhases.test.ts`).
+- The engine is timezone-independent by construction (no `Date`/clock use);
+  displayed dates are assigned in IST via pure Julian-day arithmetic.
+  A printed phase spans two calendar days in some publisher lists —
+  the app marks exactly ONE day (the printed sunrise-day convention).
+  Pradosham (trayodashi)
+  and Ekadasi (tithi 11) use tithi-band rules (see below). The Meeus anchors
+  live in `src/services/__tests__/panchangamAstro.test.ts`.
 - The same generators live in `src/data/lunarPhases.ts` (range-parameterized);
   the observance repositories run them **at runtime for every navigable year
   (1900–2100)**, so the dates do not stop at the bundled dataset window

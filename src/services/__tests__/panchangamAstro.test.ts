@@ -104,12 +104,12 @@ describe('panchangam astro (sidereal ephemeris)', () => {
   });
 
   /**
-   * Printed-calendar junction convention (dataset 2026.10-subset.6): the
-   * phase tithi BEGINS inside the labeled day, so at least one of the
-   * labeled day's / next day's sunrises must lie within half a tithi
-   * (≤12.2°) of the tithi-start boundary: 348° for amavasai, 168-180°
-   * band for pournami. (The conjunction instant's clock-day may differ
-   * from the printed date — that is the convention, not engine drift.)
+   * Printed-calendar sunrise convention (dataset 2026.10-subset.7): the
+   * labeled day is the FIRST Chennai sunrise inside the phase tithi, so
+   * the labeled day's 06:00 IST sample always lies strictly inside the
+   * band: [348°,360°) for amavasai, [168°,180°) for pournami. The
+   * conjunction instant's clock-day may precede the printed date — that
+   * is the convention, not engine drift.
    */
   test.each(amavasai.slice(0, 8).map((r) => [r.dateKey, r]))('%s: inside the amavasai tithi (348° band)', (key, row) => {
     const [y, m, d] = key.split('-').map(Number);

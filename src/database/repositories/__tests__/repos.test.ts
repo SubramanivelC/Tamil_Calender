@@ -115,8 +115,8 @@ describe('user data repositories', () => {
   });
 
   test('observances by date (amavasai/pournami/pradosham/ekadasi)', async () => {
-    // Dates follow the engine-derived lunar tables (dataset 2026.10-subset.6,
-    // printed tithi-start junction rule): amavasai Jan 18, trayodashi Jan 16.
+    // Dates follow the engine-derived lunar tables (dataset 2026.10-subset.7,
+    // printed sunrise-day rule): amavasai Jan 18, trayodashi Jan 16.
     const amd = await getObservancesForDate('2026-01-18');
     expect(amd.some((o) => o.kind === 'amavasai')).toBe(true);
     // Exact-date queries must return ONLY that date's rows — the computed

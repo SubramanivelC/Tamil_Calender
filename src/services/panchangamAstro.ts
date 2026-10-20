@@ -47,7 +47,13 @@ export interface SunMoonLongitude {
   moonTropical: number;
 }
 
-function sunLongitude(T: number): number {
+/**
+ * Tropical apparent solar longitude in degrees (Meeus ch.25 low-precision;
+ * includes aberration and the nutation-in-longitude correction). Also used
+ * by the high-accuracy lunar-phase engine (lunarEphemeris.ts) for the
+ * sunrise solve and the moon−sun elongation.
+ */
+export function sunLongitude(T: number): number {
   const L0 = 280.46646 + 36000.76983 * T + 0.0003032 * T * T;
   const M = 357.52911 + 35999.05029 * T - 0.0001537 * T * T;
   const C =

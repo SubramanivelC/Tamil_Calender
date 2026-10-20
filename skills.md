@@ -17,9 +17,11 @@ with the concrete places each was applied. Read together with `README.md`,
   with approximate fallbacks marked "≈").
 
 ### Moon-phase & observance rules (printed-calendar conventions)
-- Amavasai/pournami junction-day rule: the calendar day containing the
-  elongation 0°/180° crossing, "before 18:00 IST owns the day" convention →
-  `src/data/lunarPhases.ts`, seeded via `src/database/seed/importer.ts`.
+- Amavasai/pournami sunrise-day rule: the FIRST Chennai sunrise inside the
+  phase tithi labels the day (no-sunrise case → the conjunction's
+  sunrise-day); instants from `src/services/lunarEphemeris.ts` (Meeus ch.47
+  full series + ΔT + Chennai sunrise), rule in `src/data/lunarPhases.ts`,
+  seeded via `src/database/seed/importer.ts`.
 - Tithi-band observances: Ekadasi (tithi 11) and Pradosham (trayodashi)
   local-minimum band rule with one day per fortnight guarantee.
 - Chandandra-gochara (moon transit) palam categories: janma rasi ±
