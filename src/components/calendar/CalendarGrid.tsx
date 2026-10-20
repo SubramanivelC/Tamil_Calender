@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Pressable, Text, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, Pressable, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { useSettingsStore } from '@/store/settingsStore';
 import { weekdayName } from '@/localization';
@@ -207,8 +207,6 @@ export function CalendarGrid({
   onSelectDate,
 }: CalendarGridProps) {
   const theme = useTheme();
-  const { width } = useWindowDimensions();
-  const colWidth = (width - spacing.xl * 2) / 7;
 
   const weekdayOrder = firstDayOfWeek === 1 ? [1, 2, 3, 4, 5, 6, 0] : [0, 1, 2, 3, 4, 5, 6];
 
@@ -219,14 +217,15 @@ export function CalendarGrid({
   }
 
   return (
-    <View>
+    <View style={styles.gridWrap}>
       <View style={styles.weekHeader}>
         {weekdayOrder.map((w) => (
-          <View key={w} style={[styles.headerCell, { width: colWidth }]}>
+          <View key={w} style={styles.headerCell}>
             <Text
+              numberOfLines={1}
               style={[
-                { color: theme.colors.textSecondary, fontSize: 12 },
                 styles.headerText,
+                { color: theme.colors.textSecondary },
               ]}
             >
               {weekdayName(w, language, true)}
@@ -234,6 +233,7 @@ export function CalendarGrid({
           </View>
         ))}
       </View>
+      <View style={[styles.headerDivider, { backgroundColor: theme.colors.border }]} />
       {rows.map((week, idx) => {
         const ordered = [...week].sort(
           (a, b) => weekdayOrder.indexOf(a.weekday) - weekdayOrder.indexOf(b.weekday)
@@ -241,7 +241,7 @@ export function CalendarGrid({
         return (
           <View key={idx} style={styles.weekRow}>
             {ordered.map((cell) => (
-              <View key={cell.key} style={{ width: colWidth, minHeight: minTouchTarget }}>
+              <View key={cell.key} style={styles.cellWrap}>
                 <CalendarCell
                   cell={cell}
                   numerals={numerals}
@@ -259,27 +259,45 @@ export function CalendarGrid({
 }
 
 const styles = StyleSheet.create({
+  /** Gutter around the grid so the grid fits any parent card exactly
+   *  — columns distribute via flex, never fixed pixel math. */
+  gridWrap: {
+    paddingHorizontal: 6,
+    paddingBottom: spacing.sm,
+  },
   weekHeader: {
     flexDirection: 'row',
-    marginBottom: 4,
+    marginTop: spacing.xs,
   },
   headerCell: {
+    flex: 1,
     alignItems: 'center',
   },
   headerText: {
+    fontSize: 12,
+    fontWeight: '600',
     // No textTransform/letterSpacing: Tamil has no uppercase, and the W3C
     // Tamil layout note (ilreq-taml) warns fixed letter-spacing/clipping
-    // assumptions break Tamil glyphs with two-part vowel signs. Capitalized
-    // weekday labels suffice in English.
+    // assumptions break Tamil glyphs with two-part vowel signs.
+  },
+  headerDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginBottom: 4,
+    marginHorizontal: spacing.xs,
   },
   weekRow: {
     flexDirection: 'row',
+  },
+  cellWrap: {
+    flex: 1,
+    minHeight: minTouchTarget,
   },
   cell: {
     minHeight: minTouchTarget,
     alignItems: 'center',
     justifyContent: 'center',
     margin: 1,
+    borderRadius: 10,
     paddingVertical: 3,
   },
   day: {

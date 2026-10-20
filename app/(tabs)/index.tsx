@@ -133,7 +133,7 @@ export default function HomeScreen() {
                   value={data.selectedPanchang.paksha}
                   language={language as 'ta' | 'en'}
                 />
-                <View style={styles.summaryDivider} />
+                <View style={[styles.summaryDivider, { backgroundColor: colors.divider }]} />
                 <TimeRow
                   label={t('sunrise')}
                   value={data.selectedPanchang.sunrise}
@@ -156,7 +156,7 @@ export default function HomeScreen() {
                   value={data.selectedPanchang.moonset}
                   language={language as 'ta' | 'en'}
                 />
-                <View style={styles.summaryDivider} />
+                <View style={[styles.summaryDivider, { backgroundColor: colors.divider }]} />
                 <TimeRow
                   label={t('nallaNeram')}
                   value={data.selectedPanchang.nallaNeram}
@@ -178,7 +178,7 @@ export default function HomeScreen() {
                   value={data.selectedPanchang.kuligai}
                   language={language as 'ta' | 'en'}
                 />
-                <View style={styles.summaryDivider} />
+                <View style={[styles.summaryDivider, { backgroundColor: colors.divider }]} />
                 <TimeRow
                   label={t('soolam')}
                   value={data.selectedPanchang.soolam}
@@ -345,7 +345,7 @@ function TodayHero({
           {data.selectedTamilLabel}
         </ThemedText>
       </View>
-      <View style={{ marginTop: spacing.lg }}>
+      <View style={[stylesTodayHero.calendarArea, { borderBottomColor: colors.border }]}>
         <MonthSelector
           monthName={data.selectedMonthName}
           tamilMonthName={selectedTamilMonthName}
@@ -377,6 +377,13 @@ const stylesTodayHero = StyleSheet.create({
   heroBand: {
     padding: spacing.lg,
     paddingBottom: spacing.md,
+  },
+  /** Keeps the month selector arrows away from the screen edges and gives
+   *  the calendar block a clean inset inside the hero card. */
+  calendarArea: {
+    paddingHorizontal: spacing.xs,
+    marginTop: spacing.xs,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
 });
 
@@ -421,7 +428,11 @@ function QuickActions({
             accessibilityLabel={a.label}
             style={({ pressed }) => [
               styles.quickTile,
-              { backgroundColor: colors.surface, opacity: pressed ? 0.8 : 1 },
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+                opacity: pressed ? 0.8 : 1,
+              },
             ]}
           >
             <Ionicons name={a.icon} size={24} color={colors.primary} />
@@ -438,7 +449,6 @@ function QuickActions({
 const styles = StyleSheet.create({
   summaryDivider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: 'rgba(118, 37, 54, 0.12)',
     marginVertical: spacing.md,
   },
   detailsRow: {
@@ -477,7 +487,6 @@ const styles = StyleSheet.create({
     flexBasis: '44%',
     borderRadius: 14,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(118,37,54,0.12)',
     padding: spacing.lg,
     minHeight: 96,
     alignItems: 'center',

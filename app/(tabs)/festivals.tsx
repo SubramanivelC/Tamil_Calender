@@ -99,6 +99,7 @@ export default function FestivalsScreen() {
               accessibilityState={{ selected: category === c }}
               style={[
                 styles.catPill,
+                { borderColor: colors.primaryMuted },
                 category === c && { backgroundColor: colors.primary },
               ]}
             >
@@ -210,7 +211,6 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 999,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(118,37,54,0.25)',
     minHeight: minTouchTarget,
     justifyContent: 'center',
   },

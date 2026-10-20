@@ -317,7 +317,8 @@ export default function MyRasiScreen() {
                 key={rasi}
                 style={[
                   styles.palamRow,
-                  rasi === selectedRasi ? styles.palamRowSelected : null,
+                  { backgroundColor: colors.surfaceMuted },
+                  rasi === selectedRasi && { backgroundColor: colors.primaryMuted },
                 ]}
               >
                 <ThemedText
@@ -480,9 +481,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     gap: 8,
   },
-  palamRowSelected: {
-    backgroundColor: 'rgba(118, 37, 54, 0.12)',
-  },
+
   palamRowName: {
     flexShrink: 1,
   },

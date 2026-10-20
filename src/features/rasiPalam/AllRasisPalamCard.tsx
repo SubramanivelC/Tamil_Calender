@@ -72,7 +72,11 @@ export function AllRasisPalamCard({ dateKey }: { dateKey: string }) {
             return (
               <View
                 key={rasi}
-                style={[styles.palamRow, { backgroundColor: colors.surfaceMuted }, mine && styles.palamRowSelected]}
+                style={[
+                  styles.palamRow,
+                  { backgroundColor: colors.surfaceMuted },
+                  mine && { backgroundColor: colors.primaryMuted },
+                ]}
               >
                 <ThemedText
                   variant="small"
@@ -139,9 +143,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     borderRadius: 8,
     gap: 8,
-  },
-  palamRowSelected: {
-    backgroundColor: 'rgba(118, 37, 54, 0.14)',
   },
   palamRowName: {
     flexShrink: 1,

@@ -78,7 +78,9 @@ export function MonthDetails({
                   accessibilityLabel={`${row.dateKey} ${row.nameEn ?? row.nameTa ?? g.title}`}
                   style={({ pressed }) => [styles.row, pressed && { opacity: 0.8 }]}
                 >
-                  <View style={styles.dayWrap}>
+                  {/* Theme-aware tint: the hardcoded maroon alpha leaked
+                      into dark mode (unchangeable from StyleSheet). */}
+                  <View style={[styles.dayWrap, { backgroundColor: colors.primaryMuted }]}>
                     <ThemedText
                       variant="small"
                       weight="medium"
@@ -133,7 +135,6 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(118, 37, 54, 0.08)',
   },
   name: {
     flex: 1,
