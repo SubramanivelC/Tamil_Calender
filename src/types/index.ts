@@ -69,6 +69,21 @@ export interface PanchangamRecord extends PanchangTimings {
   soolam: string;
   /** Parigaram for the day's soolam ('வெல்லம் / Jaggery'). */
   parikaram: string;
+  /**
+   * Engine-computed end times (IST 'HH:mm', 24h) and the civil IST date
+   * ('YYYY-MM-DD') on which each boundary transition lands. Populated by
+   * `getPanchangamForDate` from the high-accuracy ephemeris at the day's
+   * actual Chennai sunrise; null when the ephemeris is unavailable.
+   */
+  tithiEnd: string | null;
+  tithiEndDay: string | null;
+  nextTithi: string | null;
+  nextTithiEnd: string | null;
+  nextTithiEndDay: string | null;
+  nakshatraEnd: string | null;
+  nakshatraEndDay: string | null;
+  nextNakshatraEnd: string | null;
+  nextNakshatraEndDay: string | null;
 }
 
 export interface FestivalOccurrence {

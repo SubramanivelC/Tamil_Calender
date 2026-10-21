@@ -225,6 +225,17 @@ export const enDict = {
   dbInitFailed: 'Failed to initialize the database',
   retry: 'Retry',
 
+  // Boundary end times + star-based Chandrashtama
+  tithiEnd: 'Thithi ends',
+  nextTithi: 'Next thithi',
+  nakshatraEnd: 'Nakshatra ends',
+  nextDayMarker: 'next day',
+  chandrashtamaStar: 'Chandrashtama star',
+  chandrashtamaInterval: 'Chandrashtama from',
+  chandrashtamaUntil: 'until',
+  nextChandrashtama: 'Next Chandrashtama',
+  chandrashtamaNeedsStar: 'Set your birth star in My Rasi to see Chandrashtama',
+
   // Navigation
   back: 'Back',
 } as const;

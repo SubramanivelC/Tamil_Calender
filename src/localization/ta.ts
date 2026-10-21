@@ -227,6 +227,17 @@ export const taDict = {
   dbInitFailed: 'தரவுத்தளம் தொடங்க முடியவில்லை',
   retry: 'மீண்டும் முயற்சி',
 
+  // திதி/நட்சத்திர முடிவு நேரம் + நட்சத்திர அடிப்படை சந்திரஷ்டமம்
+  tithiEnd: 'திதி முடிவு',
+  nextTithi: 'அடுத்த திதி',
+  nakshatraEnd: 'நட்சத்திர முடிவு',
+  nextDayMarker: 'அடுத்த நாள்',
+  chandrashtamaStar: 'சந்திரஷ்டம நட்சத்திரம்',
+  chandrashtamaInterval: 'சந்திரஷ்டமம் தொடங்கும்',
+  chandrashtamaUntil: 'முடியும்',
+  nextChandrashtama: 'அடுத்த சந்திரஷ்டமம்',
+  chandrashtamaNeedsStar: 'சந்திரஷ்டமத்தைக் காண என் ராசியில் பிறந்த நட்சத்திரத்தை அமைக்கவும்',
+
   // Navigation (no anglicisms in Tamil mode)
   back: 'பின்செல்',
 } as const;

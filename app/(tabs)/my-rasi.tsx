@@ -25,6 +25,12 @@ import {
   janmaRasiFromBirth,
   type DailyPalam,
 } from '@/data/rasiPalam';
+import { NAKSHATRA_NAMES } from '@/data/mappings';
+import {
+  chandrashtamaWindowForDate,
+  jdUtToIstDayKey,
+  jdUtToIstHHmm,
+} from '@/services/panchangamCalc';
 import { getPanchangamForDate } from '@/database/repositories/panchangamRepo';
 import { spacing } from '@/theme/spacing';
 
@@ -48,6 +54,40 @@ export default function MyRasiScreen() {
   const [foundRasi, setFoundRasi] = useState<number | null>(null);
   const [allPalam, setAllPalam] = useState<DailyPalam[] | null>(null);
   const [dateKey, setDateKey] = useState(localTodayKey());
+
+  /** Star-based Chandrashtama window for the stored janma star (null = not set). */
+  const [chandra, setChandra] = useState<null | {
+    status: 'active' | 'upcoming';
+    starLabel: string;
+    startHHmm: string;
+    startDayKey: string;
+    endHHmm: string;
+    endDayKey: string;
+  }>(null);
+  useEffect(() => {
+    const star = settings.rasiPalamBirthStar;
+    if (star === null) {
+      setChandra(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const w = chandrashtamaWindowForDate(dateKey, star);
+      if (!cancelled) {
+        setChandra({
+          status: w.status,
+          starLabel: NAKSHATRA_NAMES[w.starIndex] ?? '',
+          startHHmm: jdUtToIstHHmm(w.startJdUt),
+          startDayKey: jdUtToIstDayKey(w.startJdUt),
+          endHHmm: jdUtToIstHHmm(w.endJdUt),
+          endDayKey: jdUtToIstDayKey(w.endJdUt),
+        });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [dateKey, settings.rasiPalamBirthStar, settings]);
 
   // Midnight (or focus) refresh of "today".
   useEffect(() => {
@@ -275,16 +315,32 @@ export default function MyRasiScreen() {
         {selectedRasi !== null && mine ? (
           <Card style={{ padding: spacing.lg, marginBottom: spacing.xl }}>
             {/* Chandrashtama is the day's most consequential signal — give it
-                a banner, not just a tinted row in the 12-rasi list below. */}
-            {mine.category === 'chandrashtama' ? (
+                a banner, not just a tinted row in the 12-rasi list below.
+                With a janma star stored, the verdict is the star-based
+                window; without one the card asks for the star instead of
+                presenting a personalized verdict. */}
+            {chandra ? (
               <View style={[styles.chandraBanner, { backgroundColor: 'rgba(179, 38, 30, 0.08)' }]}>
                 <Ionicons name="warning" size={18} color={colors.error} />
                 <View style={{ flex: 1 }}>
-                  <ThemedText variant="small" weight="medium" color="error">
-                    {t('chandrashtamaTitle')}
+                  <ThemedText variant="small" weight="medium" color={chandra.status === 'active' ? 'error' : 'default'}>
+                    {chandra.status === 'active' ? t('chandrashtamaInterval') : t('nextChandrashtama')}
+                    {': '}{cleanBilingualValue(chandra.starLabel, language as 'ta' | 'en')}
                   </ThemedText>
                   <ThemedText variant="caption" color="secondary">
-                    {t('chandrashtamaMessage')}
+                    {t('chandrashtamaUntil')}:{' '}
+                    {`${chandra.startHHmm}${chandra.startDayKey !== dateKey ? ` · ${t('nextDayMarker')}` : ''}`}
+                    {' — '}
+                    {`${chandra.endHHmm}${chandra.endDayKey !== dateKey ? ` · ${t('nextDayMarker')}` : ''}`}
+                  </ThemedText>
+                </View>
+              </View>
+            ) : chandra === null && mine.category === 'chandrashtama' ? (
+              <View style={[styles.chandraBanner, { backgroundColor: 'rgba(179, 38, 30, 0.08)' }]}>
+                <Ionicons name="information-circle" size={18} color={colors.primary} />
+                <View style={{ flex: 1 }}>
+                  <ThemedText variant="caption" color="secondary">
+                    {t('chandrashtamaNeedsStar')}
                   </ThemedText>
                 </View>
               </View>

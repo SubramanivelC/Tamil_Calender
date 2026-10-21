@@ -21,6 +21,7 @@ import { TimeRow } from '@/components/TimeRow';
 import { RasiPalamCard } from '@/features/rasiPalam/RasiPalamCard';
 import { spacing } from '@/theme/spacing';
 import { localTodayKey, parseDateKey } from '@/utils/dates';
+import { formatBoundaryStamp } from '@/utils/stamps';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -111,9 +112,54 @@ export default function HomeScreen() {
                   language={language as 'ta' | 'en'}
                 />
                 <TimeRow
+                  key="tithiEnd"
+                  label={t('tithiEnd')}
+                  value={formatBoundaryStamp(
+                    data.selectedPanchang.tithiEnd,
+                    data.selectedPanchang.tithiEndDay,
+                    selectedKey,
+                    language,
+                    t,
+                    numerals
+                  )}
+                  language={language as 'ta' | 'en'}
+                />
+                <TimeRow
+                  key="nextTithi"
+                  label={t('nextTithi')}
+                  value={data.selectedPanchang.nextTithi ?? null}
+                  language={language as 'ta' | 'en'}
+                />
+                <TimeRow
+                  key="nextTithiEnd"
+                  label={`${t('nextTithi')} ${t('tithiEnd').toLowerCase()}`}
+                  value={formatBoundaryStamp(
+                    data.selectedPanchang.nextTithiEnd,
+                    data.selectedPanchang.nextTithiEndDay,
+                    selectedKey,
+                    language,
+                    t,
+                    numerals
+                  )}
+                  language={language as 'ta' | 'en'}
+                />
+                <TimeRow
                   key="nakshatra"
                   label={t('nakshatra')}
                   value={data.selectedPanchang.nakshatra}
+                  language={language as 'ta' | 'en'}
+                />
+                <TimeRow
+                  key="nakshatraEnd"
+                  label={t('nakshatraEnd')}
+                  value={formatBoundaryStamp(
+                    data.selectedPanchang.nakshatraEnd,
+                    data.selectedPanchang.nakshatraEndDay,
+                    selectedKey,
+                    language,
+                    t,
+                    numerals
+                  )}
                   language={language as 'ta' | 'en'}
                 />
                 <TimeRow

@@ -7,9 +7,17 @@ import {
   computeSoolamParikaram,
 } from '@/services/panchangamService';
 import { julianDay, lunarFieldsAtJd } from '@/services/panchangamAstro';
+import {
+  jdUtToIstDayKey,
+  jdUtToIstHHmm,
+  nakshatraFactsAtJdUt,
+  sunriseJdUtForDateKey,
+  tithiFactsAtJdUt,
+} from '@/services/panchangamCalc';
+import { PAKSHA_NAMES } from '@/data/mappings';
 import { approxSunriseSunset } from '@/data/seedData';
 import { convertToTamil } from '@/services/tamilCalendarService';
-import { dateKeyToDate, daysInMonth, toDateKey, addDays } from '@/utils/dates';
+import { dateKeyToDate, daysInMonth, toDateKey, addDays, parseDateKey } from '@/utils/dates';
 
 interface PanchangRow {
   date_key: string;
@@ -38,6 +46,15 @@ function rowToRecord(row: PanchangRow): PanchangamRecord {
     yoga: row.yoga,
     karana: row.karana,
     paksha: row.paksha,
+    tithiEnd: null,
+    tithiEndDay: null,
+    nextTithi: null,
+    nextTithiEnd: null,
+    nextTithiEndDay: null,
+    nakshatraEnd: null,
+    nakshatraEndDay: null,
+    nextNakshatraEnd: null,
+    nextNakshatraEndDay: null,
     sunrise: row.sunrise,
     sunset: row.sunset,
     moonrise: row.moonrise,
@@ -51,9 +68,44 @@ function rowToRecord(row: PanchangRow): PanchangamRecord {
 }
 
 /**
+ * High-accuracy lunar overlay (src/services/panchangamCalc.ts):
+ * re-evaluates tithi/nakshatra at the day's actual Chennai sunrise with
+ * the full-series ephemeris and solves the EXACT tithi/nakshatra end
+ * instants, then overlays the record. This keeps every screen consistent
+ * (all of them read through this function) and supplies the end times and
+ * next-tithi/next-nakshatra forecasts the almanac rows render.
+ */
+function overlayLunarFacts(record: PanchangamRecord): void {
+  try {
+    const { year, month, day } = parseDateKey(record.dateKey);
+    const sunriseJdUt = sunriseJdUtForDateKey(record.dateKey);
+    const tithi = tithiFactsAtJdUt(sunriseJdUt);
+    const naks = nakshatraFactsAtJdUt(sunriseJdUt);
+    record.tithi = tithi.name;
+    record.nakshatra = naks.name;
+    record.paksha = tithi.index < 15 ? PAKSHA_NAMES.shukla : PAKSHA_NAMES.krishna;
+    record.tithiEnd = jdUtToIstHHmm(tithi.endJdUt);
+    record.tithiEndDay = jdUtToIstDayKey(tithi.endJdUt);
+    record.nextTithi = tithi.nextName;
+    record.nextTithiEnd = jdUtToIstHHmm(tithi.nextEndJdUt);
+    record.nextTithiEndDay = jdUtToIstDayKey(tithi.nextEndJdUt);
+    record.nakshatraEnd = jdUtToIstHHmm(naks.endJdUt);
+    record.nakshatraEndDay = jdUtToIstDayKey(naks.endJdUt);
+    record.nextNakshatraEnd = jdUtToIstHHmm(naks.nextEndJdUt);
+    record.nextNakshatraEndDay = jdUtToIstDayKey(naks.nextEndJdUt);
+    void year; void month; void day;
+  } catch {
+    // Ephemeris failure: keep the previously verified DB values; never
+    // substitute fabricated times in their place.
+  }
+}
+
+/**
  * Loads panchangam for a local date. If no dataset row exists, computes
  * classical timings from approximate sun times and flags them as
- * non-verified via `verified: false`. Never fabricates tithi/nakshatra.
+ * non-verified via `verified: false`. Never fabricates tithi/nakshatra:
+ * the lunar overlay only labels instants the engine itself computes,
+ * and leaves DB values untouched on ephemeris failure.
  */
 export async function getPanchangamForDate(
   dateKey: string
@@ -64,7 +116,9 @@ export async function getPanchangamForDate(
     dateKey
   );
   if (row) {
-    return { record: rowToRecord(row), verified: row.verified === 1, source: row.source };
+    const record = rowToRecord(row);
+    overlayLunarFacts(record);
+    return { record, verified: row.verified === 1, source: row.source };
   }
 
   // Fallback: derive from approximations (marked unverified).
@@ -97,7 +151,17 @@ export async function getPanchangamForDate(
     kuligai: inauspicious.kuligai,
     nallaNeram: computeNallaNeramGowri(date.getDay(), sun ?? { sunrise: null, sunset: null }),
     ...computeSoolamParikaram(date.getDay()),
+    tithiEnd: null,
+    tithiEndDay: null,
+    nextTithi: null,
+    nextTithiEnd: null,
+    nextTithiEndDay: null,
+    nakshatraEnd: null,
+    nakshatraEndDay: null,
+    nextNakshatraEnd: null,
+    nextNakshatraEndDay: null,
   };
+  overlayLunarFacts(record);
   return { record, verified: false, source: null };
 }
 

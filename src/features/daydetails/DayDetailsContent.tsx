@@ -23,6 +23,7 @@ import { DEFAULT_REMINDER_HHMM } from '@/data/constants';
 import { spacing, radius } from '@/theme/spacing';
 import { formatTimeWithMeridiem, formatNumerals } from '@/utils/numerals';
 import { localTodayKey, parseDateKey } from '@/utils/dates';
+import { formatBoundaryStamp as formatEndStamp } from '@/utils/stamps';
 
 import { selectionTick, lightTap, successTick } from '@/utils/haptics';
 
@@ -326,7 +327,23 @@ export function DayDetailsContent({
           {fullPanchangamOpen ? (
             <View>
               <TimeRow label={t('tithi')} value={data.panchangam.record.tithi} language={language} />
+              <TimeRow
+                label={t('tithiEnd')}
+                value={formatEndStamp(data.panchangam.record.tithiEnd, data.panchangam.record.tithiEndDay, dateKey, language, t, numerals as 'arabic' | 'tamil')}
+                language={language}
+              />
+              <TimeRow label={t('nextTithi')} value={data.panchangam.record.nextTithi ?? null} language={language} />
+              <TimeRow
+                label={`${t('nextTithi')} ${t('tithiEnd').toLowerCase()}`}
+                value={formatEndStamp(data.panchangam.record.nextTithiEnd, data.panchangam.record.nextTithiEndDay, dateKey, language, t, numerals as 'arabic' | 'tamil')}
+                language={language}
+              />
               <TimeRow label={t('nakshatra')} value={data.panchangam.record.nakshatra} language={language} />
+              <TimeRow
+                label={t('nakshatraEnd')}
+                value={formatEndStamp(data.panchangam.record.nakshatraEnd, data.panchangam.record.nakshatraEndDay, dateKey, language, t, numerals as 'arabic' | 'tamil')}
+                language={language}
+              />
               <TimeRow label={t('yoga')} value={data.panchangam.record.yoga} language={language} />
               <TimeRow label={t('karana')} value={data.panchangam.record.karana} language={language} />
               <TimeRow label={t('soolam')} value={data.panchangam.record.soolam} language={language} />
