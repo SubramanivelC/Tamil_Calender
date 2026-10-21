@@ -235,6 +235,10 @@ export const enDict = {
   chandrashtamaUntil: 'until',
   nextChandrashtama: 'Next Chandrashtama',
   chandrashtamaNeedsStar: 'Set your birth star in My Rasi to see Chandrashtama',
+  nokkuNaalRow: 'Nokku naal',
+  nokkuNaalMel: 'Meel nokku naal',
+  nokkuNaalKeel: 'Keel nokku naal',
+  nokkuNaalSama: 'Sama nokku naal',
 
   // Navigation
   back: 'Back',

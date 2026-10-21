@@ -346,6 +346,15 @@ export function DayDetailsContent({
               />
               <TimeRow label={t('yoga')} value={data.panchangam.record.yoga} language={language} />
               <TimeRow label={t('karana')} value={data.panchangam.record.karana} language={language} />
+              <TimeRow
+                label={t('nokkuNaalRow')}
+                value={
+                  data.panchangam.record.nokkuNaal
+                    ? t(`nokkuNaal${data.panchangam.record.nokkuNaal === 'mel' ? 'Mel' : data.panchangam.record.nokkuNaal === 'keel' ? 'Keel' : 'Sama'}`)
+                    : null
+                }
+                language={language}
+              />
               <TimeRow label={t('soolam')} value={data.panchangam.record.soolam} language={language} />
               <TimeRow label={t('parikaram')} value={data.panchangam.record.parikaram} language={language} />
               {cleanedPaksha ? (

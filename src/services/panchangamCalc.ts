@@ -191,6 +191,51 @@ export function nakshatraFactsAtJdUt(jdUt: number): BoundaryFacts {
   return { ...f, name: nameAt(f.index), nextName: nameAt(f.nextIndex) };
 }
 
+// --- Nokku naal (மேல் / கீழ் / சம நோக்கு நாள்) -----------------------------
+
+/**
+ * Traditional nakshatra-direction day classification used on Tamil panchangam
+ * sheets (மேல் நோக்கு = upward-facing, கீழ் நோக்கு = downward-facing,
+ * சம நோக்கு = level-facing). It is a property of the day's NAKSHATRA, not a
+ * paksha/tithi count (amavasai/pournami days still carry a normal label):
+ *
+ *  - மேல் நோக்கு: Rohini, Ardra, Pushya, Uttara Phalguni, Uttarashada,
+ *    Shravana, Dhanishta, Shatabhisha, Uttarabhadra — favour growing,
+ *    building, upward work.
+ *  - கீழ் நோக்கு: Bharani, Krittika, Ashlesha, Magha, Purva Phalguni,
+ *    Vishakha, Moolam, Purvashada, Purvabhadra — favour digging,
+ *    foundation, downward work.
+ *  - சம நோக்கு: Ashwini, Mrigashira, Punarvasu, Hasta, Chitra, Swati,
+ *    Anuradha, Jyeshta, Revati — level/travel work.
+ *
+ * Day assignment follows the app's sunrise-anchored convention: the
+ * nakshatra at the day's Chennai sunrise classifies the day (matches the
+ * published daily sheets for 9/10 sampled days of Aug 2026; the remaining
+ * day differs because a vaakiyam publisher uses vaakiyam star timing —
+ * the conventional vaakiyam vs Thirukanitha difference documented in
+ * docs/DATA_SOURCES.md).
+ */
+export type NokkuNaal = 'mel' | 'keel' | 'sama';
+
+/** Bilingual 'தமிழ் / English' value strings (Tamil-first, Cleanable). */
+export const NOKKU_NAAL_LABELS: Record<NokkuNaal, string> = {
+  mel: 'மேல் நோக்கு நாள் / Meel nokku naal',
+  keel: 'கீழ் நோக்கு நாள் / Keel nokku naal',
+  sama: 'சம நோக்கு நாள் / Sama nokku naal',
+};
+
+const MEL_NOKKU_STAR_INDICES = [3, 5, 7, 11, 20, 21, 22, 23, 25];
+const KEEL_NOKKU_STAR_INDICES = [1, 2, 8, 9, 10, 15, 18, 19, 24];
+
+/** Classification for a nakshatra index (0..26); every star is in exactly
+ *  one of the three groups (9+9+9 = 27). */
+export function nokkuNaalForStarIndex(starIndex: number): NokkuNaal {
+  const idx = ((starIndex % 27) + 27) % 27;
+  if (MEL_NOKKU_STAR_INDICES.includes(idx)) return 'mel';
+  if (KEEL_NOKKU_STAR_INDICES.includes(idx)) return 'keel';
+  return 'sama';
+}
+
 // --- Chandrashtama ---------------------------------------------------------
 
 /**

@@ -13,6 +13,7 @@
  *  - IST conversion of instants, incl. the UTC day-shift case.
  */
 import {
+  nokkuNaalForStarIndex,
   tithiFactsAtJdUt,
   nakshatraFactsAtJdUt,
   moonSiderealAtJdUt,
@@ -24,6 +25,7 @@ import {
   NAKSHATRA_ARC_DEG,
 } from '../panchangamCalc';
 import { julianDay, norm360 } from '../panchangamAstro';
+import { nakshatraIndexAtJdUt } from '../panchangamCalc';
 import { elongationAtJdUt, chennaiSunriseJdUt } from '../lunarEphemeris';
 import { phaseInstantsForRange } from '@/data/lunarPhases';
 
@@ -35,6 +37,62 @@ const TIMESTAMP_TOL = 1e-4;
 function sunriseApproxJd(y: number, m: number, d: number): number {
   return julianDay(y, m, d, (6 * 60 - 330) / 1440);
 }
+
+describe('Nokku naal (மேல் / கீழ் / சம நோக்கு நாள்) classification', () => {
+  test('classifies all 27 stars: three disjoint groups of 9', () => {
+    const counts = { mel: 0, keel: 0, sama: 0 };
+    const seen: string[] = [];
+    for (let i = 0; i < 27; i++) {
+      const c = nokkuNaalForStarIndex(i);
+      counts[c] = counts[c] + 1;
+      expect(seen).not.toContain(c + ':' + i);
+      seen.push(c + ':' + i);
+    }
+    expect(counts.mel).toBe(9);
+    expect(counts.keel).toBe(9);
+    expect(counts.sama).toBe(9);
+    for (let i = 0; i < 27; i++) {
+      const c = nokkuNaalForStarIndex(i);
+      expect(['mel', 'keel', 'sama']).toContain(c);
+    }
+  });
+
+  test('anchor stars: Rohini=meel, Bharani=keel, Ashwini=sama (traditional lists)', () => {
+    expect(nokkuNaalForStarIndex(3)).toBe('mel'); // Rohini
+    expect(nokkuNaalForStarIndex(7)).toBe('mel'); // Pushya
+    expect(nokkuNaalForStarIndex(1)).toBe('keel'); // Bharani
+    expect(nokkuNaalForStarIndex(2)).toBe('keel'); // Krittika
+    expect(nokkuNaalForStarIndex(0)).toBe('sama'); // Ashwini
+    expect(nokkuNaalForStarIndex(13)).toBe('sama'); // Chitra
+    expect(nokkuNaalForStarIndex(26)).toBe('sama'); // Revati
+    // wraparound identity
+    expect(nokkuNaalForStarIndex(30)).toBe(nokkuNaalForStarIndex(3));
+  });
+
+  /**
+   * Published daily-sheet examples (allindiacalendar.com Tamil daily
+   * calendar, Aug 2026; researcher-transcribed). Classified from the
+   * Chennai-sunrise nakshatra per the app's sunrise-anchored convention.
+   * 2026-08-14 is intentionally absent: its star differs between the
+   * vaakiyam publisher and this Thirukanitha engine — the conventional
+   * documented difference (docs/DATA_SOURCES.md).
+   */
+  test.each([
+    ['2026-08-01', 'mel'],
+    ['2026-08-02', 'keel'],
+    ['2026-08-03', 'mel'],
+    ['2026-08-06', 'keel'],
+    ['2026-08-07', 'keel'],
+    ['2026-08-12', 'mel'],
+    ['2026-08-13', 'keel'],
+    ['2026-08-27', 'mel'],
+    ['2026-08-28', 'mel'],
+  ])('%s naal matches the published sheet (%s nokku)', (key, wanted) => {
+    const [y, m, d] = key.split('-').map(Number);
+    const sunrise = chennaiSunriseJdUt(y ?? 2026, m ?? 1, d ?? 1);
+    expect(nokkuNaalForStarIndex(nakshatraIndexAtJdUt(sunrise))).toBe(wanted);
+  });
+});
 
 describe('tithi facts (30 tithis, exact end instants)', () => {
   test('all 30 tithis appear in order across one synodic month and end times are consistent', () => {

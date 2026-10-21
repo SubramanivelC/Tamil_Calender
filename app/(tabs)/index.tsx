@@ -175,6 +175,12 @@ export default function HomeScreen() {
                   language={language as 'ta' | 'en'}
                 />
                 <TimeRow
+                  key="nokkuNaal"
+                  label={t('nokkuNaalRow')}
+                  value={data.selectedPanchang.nokkuNaal ? t(`nokkuNaal${data.selectedPanchang.nokkuNaal === 'mel' ? 'Mel' : data.selectedPanchang.nokkuNaal === 'keel' ? 'Keel' : 'Sama'}`) : null}
+                  language={language as 'ta' | 'en'}
+                />
+                <TimeRow
                   label={t('paksha')}
                   value={data.selectedPanchang.paksha}
                   language={language as 'ta' | 'en'}

@@ -11,6 +11,7 @@ import {
   jdUtToIstDayKey,
   jdUtToIstHHmm,
   nakshatraFactsAtJdUt,
+  nokkuNaalForStarIndex,
   sunriseJdUtForDateKey,
   tithiFactsAtJdUt,
 } from '@/services/panchangamCalc';
@@ -55,6 +56,7 @@ function rowToRecord(row: PanchangRow): PanchangamRecord {
     nakshatraEndDay: null,
     nextNakshatraEnd: null,
     nextNakshatraEndDay: null,
+    nokkuNaal: null,
     sunrise: row.sunrise,
     sunset: row.sunset,
     moonrise: row.moonrise,
@@ -93,6 +95,7 @@ function overlayLunarFacts(record: PanchangamRecord): void {
     record.nakshatraEndDay = jdUtToIstDayKey(naks.endJdUt);
     record.nextNakshatraEnd = jdUtToIstHHmm(naks.nextEndJdUt);
     record.nextNakshatraEndDay = jdUtToIstDayKey(naks.nextEndJdUt);
+    record.nokkuNaal = nokkuNaalForStarIndex(naks.index);
     void year; void month; void day;
   } catch {
     // Ephemeris failure: keep the previously verified DB values; never
@@ -160,6 +163,7 @@ export async function getPanchangamForDate(
     nakshatraEndDay: null,
     nextNakshatraEnd: null,
     nextNakshatraEndDay: null,
+    nokkuNaal: null,
   };
   overlayLunarFacts(record);
   return { record, verified: false, source: null };

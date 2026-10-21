@@ -84,6 +84,12 @@ export interface PanchangamRecord extends PanchangTimings {
   nakshatraEndDay: string | null;
   nextNakshatraEnd: string | null;
   nextNakshatraEndDay: string | null;
+  /**
+   * Traditional nakshatra-direction day label ('மேல் நோக்கு நாள் /' 'கீழ்
+   * நோக்கு நாள் /' 'சம நோக்கு நாள் / …'), classified from the day's
+   * Chennai-sunrise nakshatra; null when the ephemeris is unavailable.
+   */
+  nokkuNaal: 'mel' | 'keel' | 'sama' | null;
 }
 
 export interface FestivalOccurrence {

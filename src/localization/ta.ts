@@ -237,6 +237,10 @@ export const taDict = {
   chandrashtamaUntil: 'முடியும்',
   nextChandrashtama: 'அடுத்த சந்திரஷ்டமம்',
   chandrashtamaNeedsStar: 'சந்திரஷ்டமத்தைக் காண என் ராசியில் பிறந்த நட்சத்திரத்தை அமைக்கவும்',
+  nokkuNaalRow: 'நோக்கு நாள்',
+  nokkuNaalMel: 'மேல் நோக்கு நாள் / Meel nokku naal',
+  nokkuNaalKeel: 'கீழ் நோக்கு நாள் / Keel nokku naal',
+  nokkuNaalSama: 'சம நோக்கு நாள் / Sama nokku naal',
 
   // Navigation (no anglicisms in Tamil mode)
   back: 'பின்செல்',
